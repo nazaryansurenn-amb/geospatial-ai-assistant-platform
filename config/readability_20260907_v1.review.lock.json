@@ -1,0 +1,36 @@
+{
+  "version": "readability_20260907_v1",
+  "base": "activity_change_area50_20260907_v1",
+  "created_at": "2026-09-06T20:51:34.319140+00:00",
+  "status": "awaiting_visual_approval",
+  "files": {
+    "run_readability_review.py": {
+      "bytes": 2012,
+      "sha256": "8200b647510f054f46496f8266c12a697da641d79702ee7bd4b97f0be48cfeff"
+    },
+    "ui/readability-20260907-v1.css": {
+      "bytes": 7109,
+      "sha256": "f1249643b35a8cc5bcd76827686ed2ff74afc32dc0a24d21f2a7e6e8691966ed"
+    },
+    "ui/readability-20260907-v1.html": {
+      "bytes": 792,
+      "sha256": "cc44c5dc0acf0131a9bee6d78ba45b14a0f0b94dc2eb6f7f25bda59faa14dcb7"
+    },
+    "tests/test_readability_review.py": {
+      "bytes": 2691,
+      "sha256": "fe8e2e6c6f449cbcf5a4fcf19169430faa1193c8985bdeeef1089645a5e5e497"
+    },
+    "scripts/verify_readability_http.py": {
+      "bytes": 2067,
+      "sha256": "8460bf2a3f8aa99d645e6f9024c987070413ba03aecd5a233e7ccaa320725682"
+    },
+    "docs/UI_READABILITY_2026_09_07_EN.md": {
+      "bytes": 3092,
+      "sha256": "88b5f7515b5772a000511ead877041d9affd1adbf8213aef5178a0220deb4b38"
+    },
+    "config/activity_change_area50_20260907_v1.review.lock.json": {
+      "bytes": 882036,
+      "sha256": "e4f7ab27446e7ac98193907d115027f4399358cdd882df3b666b95bc1ede63d8"
+    }
+  }
+}

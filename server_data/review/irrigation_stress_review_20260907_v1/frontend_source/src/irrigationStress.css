@@ -1,0 +1,6 @@
+.land-mode-grid button[data-mode="irrigation_stress"] {grid-column:1 / -1; min-height:48px; white-space:normal; overflow-wrap:anywhere; line-height:1.4; letter-spacing:0;}
+.irrigation-stress-class input {flex:0 0 18px; width:18px; height:18px; accent-color:#dc3038;}
+.irrigation-stress-class {min-height:44px; align-items:center;}
+.irrigation-stress-class span:last-child {min-width:0; overflow-wrap:anywhere; line-height:1.4;}
+.irrigation-stress-section .irrigation-stress-focus {background:#a1262c; border-color:#dc3038;}
+.irrigation-stress-section .activity-summary dt {overflow-wrap:anywhere;}

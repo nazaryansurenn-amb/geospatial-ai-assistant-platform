@@ -1,0 +1,31 @@
+{
+  "version": "agent_review_20260906_v3",
+  "purpose": "plain-language replies; unchanged calculations and frontend",
+  "live_language_verified": true,
+  "files": {
+    "run_agent_review_v3.py": {
+      "bytes": 1300,
+      "sha256": "da3e3327b11917e1145f2d94864987191a216d314ac65f045d138ca48d337a84"
+    },
+    "wp_core/agent_service_v3.py": {
+      "bytes": 18435,
+      "sha256": "002ae69b6f86f2473e160583718d8e707097a0edea941bf249c31a5d2d2e913e"
+    },
+    "wp_core/agent_knowledge_v3.py": {
+      "bytes": 13838,
+      "sha256": "5b8052b111c602599ce0d39fb46bf9b915116461d090b988e7b4e232a3b41860"
+    },
+    "wp_core/agent_presentation.py": {
+      "bytes": 4390,
+      "sha256": "7bca2289fd0c9a15aa39e145fc6a52c132b64b64575763159ed422d1c64b505c"
+    },
+    "config/agent_review_20260906_v1.review.lock.json": {
+      "bytes": 1103074,
+      "sha256": "212b953ecb8c552740344e759637146259988650ad8c8a8b46e9c719d618642e"
+    },
+    "config/agent_review_20260906_v2.review.lock.json": {
+      "bytes": 540241,
+      "sha256": "1abcc61fa109a5e4e73f94bb3dd9eca4d88cd410c4452a4437d9f15121a9020d"
+    }
+  }
+}

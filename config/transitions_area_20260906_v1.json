@@ -1,0 +1,17 @@
+{
+  "version": "transitions_area_20260906_v1",
+  "scope": "lower_hrazdan_stage_1_and_2_without_household_and_roads",
+  "expected_population": 43984,
+  "expected_eligible": 22802,
+  "years": [2021, 2022, 2023, 2024, 2025],
+  "baseline": "data/analysis/observation_screening/transitions_20260906_v3",
+  "input": "data/observations/observations_2021_2025_v1",
+  "control_measurements": "data/analysis/observation_screening/screening_20260906_v2",
+  "parcel_assignment": "annual_uncertain_to_single_after_predominant",
+  "owner_authorized_area_application": true,
+  "review_port": 8526,
+  "working_port": 8525,
+  "publication": "local_owner_review",
+  "working_release_replacement": false,
+  "maximum_workers": 8
+}

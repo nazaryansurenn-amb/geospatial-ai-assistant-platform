@@ -1,0 +1,8 @@
+.land-mode-grid button[data-mode="activity_change"] { grid-column: 1 / -1; min-height: 44px; white-space: normal; overflow-wrap: anywhere; letter-spacing: 0; }
+.activity-change-period { margin: 10px 0 6px; font-size: 13px; font-weight: 650; }
+.activity-change-class { min-height: 56px; align-items: center; }
+.activity-change-class input { flex: 0 0 18px; width: 18px; height: 18px; accent-color: #318cf0; }
+.activity-change-class span:last-child { min-width: 0; overflow-wrap: anywhere; line-height: 1.4; }
+.activity-change-class small { display: block; margin-top: 4px; font-weight: 400; font-size: 12px; color: #d5e0dc; }
+.activity-change-focus { width: 100%; min-height: 42px; margin-top: 10px; color: #f7faf8; background: #265f91; border: 1px solid #78b5e6; border-radius: 4px; font: inherit; font-size: 13px; cursor: pointer; }
+.activity-change-focus:disabled { opacity: .45; cursor: default; }

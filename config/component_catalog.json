@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "scope": "technical_isolation_only",
+  "runtime_entrypoint": "run_product.py",
+  "release_catalog": "config/releases.json",
+  "local_numerical_modules": ["wp_core/parcel_identity.py", "wp_core/parcel_eo.py", "wp_core/parcel_land_features.py", "wp_core/eo_access.py", "wp_core/http_client.py"],
+  "selected_parcel_data": ["data/analysis/parcel_eo/current_halo_v1", "data/analysis/parcel_eo/v5_full_halo_2021_2025"],
+  "retained_view_functions": ["satellite_map", "communities", "canal_and_points", "two_halos", "cadastre_search", "parcel_popup", "activity_2026", "history_2021_2025"],
+  "analytical_review_pending": ["land_use_type", "annual_cycles", "household_method", "analytical_accuracy"],
+  "inactive_scripts_not_scheduled": ["scripts/prepare_lower_hrazdan_zones.py", "scripts/prepare_annual_cropping_intensity_2021_2025.py"],
+  "not_integrated": ["legacy_ai_agent", "legacy_stress_application", "land_potential"],
+  "external_legacy_runtime_dependencies": [],
+  "archived_outside_product": {
+    "archive": "LOCAL_ARCHIVE/working_product_inactive_20260905 (relative to former project root; never read by runtime)",
+    "former_paths": [
+      "public/data/land_analytics/v1_2026_09_05",
+      "public/data/land_analytics/v3_2026_09_05_18303_preview",
+      "public/data/land_analytics/v3_2026_09_05_pre_ndmi_bsi",
+      "public/data/land_analytics/v3_2026_09_05_pre_household_v3_5",
+      "data/analysis/parcel_eo/v3_2021_2025",
+      "data/analysis/parcel_eo/v4_2021_2025",
+      "server_data/land_analytics.sqlite3",
+      "server_data/land_analytics.building.sqlite3"
+    ]
+  }
+}

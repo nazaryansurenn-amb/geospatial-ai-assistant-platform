@@ -1,0 +1,12 @@
+{
+  "version": "sentinel1_parcel_delivery_20260906_v1",
+  "years": [2021, 2022, 2023, 2024, 2025],
+  "negative_increment_tolerance_mm": 0.0001,
+  "nominal_rain_limit_mm": 1.0,
+  "nominal_excursion_db": 2.0,
+  "workers": 4,
+  "list_meaning": "Parcels with observed relative radar excursions for field inspection; not established excess water demand",
+  "old_repetition_rule_unchanged": true,
+  "public_output": false,
+  "map_change": false
+}

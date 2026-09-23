@@ -1,0 +1,24 @@
+{
+  "version": "rapid_water_loss_20260906_v1",
+  "title_hy": "Գերնորմատիվային ջրապահանջարկ ունեցող հողատարածքներ",
+  "target": "irrigated_land_susceptible_to_rapid_root_zone_water_loss",
+  "scope": "existing_lower_hrazdan_stages_1_2",
+  "priority_communities": ["Ակնալիճ", "Արշալույս"],
+  "focus_communities": ["Ֆերիկ", "Ծաղկալանջ", "Նորակերտ", "Բաղրամյան", "Մուսալեռ", "Այգեկ", "Մերձավան", "Ակնալիճ", "Արշալույս"],
+  "community_aliases": {"Բաղրամյան (Էջմ.)": "Բաղրամյան"},
+  "community_priority_affects_classification": false,
+  "fill_color": "#6c5ce7",
+  "classification_enabled": false,
+  "norm_and_numerical_thresholds": null,
+  "required_evidence": [
+    "validated_irrigated_status_and_event_timing",
+    "root_zone_depth_water_retention_and_drainage_evidence",
+    "repeated_post_event_root_zone_water_balance",
+    "applicable_norm_or_validated_comparison_with_uncertainty"
+  ],
+  "evidence_files": {},
+  "eo_role": "supporting_vegetation_and_weather_context_only",
+  "coarse_250m_dataset_used": false,
+  "working_release_replacement": false,
+  "review_port": 8526
+}

@@ -1,0 +1,11 @@
+{
+  "version": "observation_rules_20260906_v1",
+  "input_version": "observations_2021_2025_v1",
+  "years": [2021, 2022, 2023, 2024, 2025],
+  "expected_population": 43984,
+  "expected_eligible": 22802,
+  "batch_parcels": 1024,
+  "minimum_free_gb": 20,
+  "policy": {},
+  "publication": "internal_draft_only"
+}

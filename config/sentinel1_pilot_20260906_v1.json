@@ -1,0 +1,28 @@
+{
+  "version": "sentinel1_pilot_20260906_v1",
+  "period": ["2025-04-01", "2025-09-30"],
+  "collection": "sentinel-1-rtc",
+  "catalogue": "server_data/review/rapid_water_loss_20260906_v1/pc_rtc_access_20260906T084017Z/response.json",
+  "copernicus_catalogue": "server_data/review/rapid_water_loss_20260906_v1/sentinel1_catalogue_20260906T083546Z/response.json",
+  "relative_orbits": [72, 152],
+  "communities": [
+    {"name": "Ակնալիճ", "clean": 24, "challenge": 8, "priority": true},
+    {"name": "Արշալույս", "clean": 24, "challenge": 8, "priority": true},
+    {"name": "Նորակերտ", "clean": 12, "challenge": 4, "priority": false},
+    {"name": "Բաղրամյան", "clean": 12, "challenge": 4, "priority": false}
+  ],
+  "interior_buffer_m": 10,
+  "minimum_nominal_resolution_elements": 9,
+  "nominal_resolution_area_m2": 440,
+  "minimum_width_m": 50,
+  "minimum_valid_fraction": 0.9,
+  "download_workers": 3,
+  "request_timeout_seconds": 45,
+  "excursion_sensitivity_db": [1.5, 2.0, 3.0],
+  "maximum_gap_for_rapid_drying_days": 3,
+  "numerical_threshold_status": "exploratory_observability_diagnostics_not_calibrated_classes",
+  "use_existing_classification_as_truth": false,
+  "public_output": false,
+  "map_change": false,
+  "bulk_llm_calls": 0
+}

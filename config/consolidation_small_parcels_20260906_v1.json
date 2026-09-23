@@ -1,0 +1,9 @@
+{
+  "version": "consolidation_small_parcels_20260906_v1",
+  "maximum_member_area_m2": 5000.0,
+  "minimum_group_area_ha": 5.0,
+  "baseline_complete_sha256": "8aaab52856b3310d760573d9314b18ee1716d6143a9628377547c1ed4304c1a2",
+  "tenm_complete_sha256": "09ae70e435abb3b2f4b5e43b28cf0f8f477508ad0d4bf53e0ee5b59714976da0",
+  "publication": "internal_draft_only",
+  "method": "Apply the member-size gate before regrouping each preserved screen. Do not combine the four-index and additional 10 m populations."
+}

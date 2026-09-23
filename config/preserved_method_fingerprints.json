@@ -1,0 +1,129 @@
+{
+  "scripts/build_full_halo_parcel_eo.py": {
+    "build": "a8654783d7aa7856f6c5b4d940a7ca5f48c056042fff661dda6c7119519efb3a"
+  },
+  "scripts/prepare_annual_cropping_intensity_2021_2025.py": {
+    "sha256": "15d27d164b56654a6364699ad65460ad10960c559d159597d22b1690eb13d8a9",
+    "records": "19f79d88a11631719e369a30a7664d2e5b72f47d1a5cdc1d9a553bc886b3d014",
+    "evaluate_year": "dd4b47e9c2d3e03952f6b0456f659e17633cdd0b24cabe8981f937c44e34f455",
+    "scope_summary": "6ba11371e342c70263c6773ee3ee389c55c1d15b775877e5016e86bda4910bb9",
+    "build": "7e0f8167b3fcd728fcf866ba61a48d3090d2dda2c29265dc6060fba7b9eceb73"
+  },
+  "scripts/prepare_cadastre.py": {
+    "sha256": "a4c51c13be26af283c7ce47752f4bac53972af5529fed0cac4dbd099258bd942",
+    "build_index": "88f7fef2bdfb5c5c177e3ca954a791111977b38387781320d3e9e592767fd24e",
+    "main": "6dc39266ae4330d410daa1266c425b769fb840274b7f63a8ab4c9f6e577123b4"
+  },
+  "scripts/prepare_cadastre_overview.py": {
+    "main": "8514890c6c39ce42e7c18e00fdb75d3d3d13f6c0c0b71e6253f52506e1dc89ba"
+  },
+  "scripts/prepare_current_parcel_universe.py": {
+    "sha256": "15d27d164b56654a6364699ad65460ad10960c559d159597d22b1690eb13d8a9",
+    "canonical_geometry_version": "1bba6b0f53b12cc50b6ea89b32f6d184dea351f80e39e128c0ec28049c82ae4e",
+    "build": "dfd8ad9b057b0ca3eed70c4733cd7d97aacf1b506474055a786017ee8f5087b6"
+  },
+  "scripts/prepare_land_activity_2026.py": {
+    "sha256": "a4c51c13be26af283c7ce47752f4bac53972af5529fed0cac4dbd099258bd942",
+    "public_parcel_id": "21b67781c3d81392d4d36c2a0c6874e39b02be5d065f5f3cce282af787b383ae",
+    "count_pixels": "66a68592ec2492a93ea82630913845725dcfa9c1697fce0fd8e0e1fbc8f2eb56",
+    "fraction": "22159f14ffc2737982718bc3959563987e8b65567c4ac1d5bbdac248149625c3",
+    "extract_activity_from_grid": "bb6d43b17b71c188ac429f26eddd17b62fee477e49b7ce71c609e53ac2fa2239",
+    "colorize": "99c28942a7f9dac1f68da7d3478a8d8ec4d49a3459e9bcd0b0fe211e27f32636",
+    "assign_stage": "ca0ddc69a49f82276a5aed6319e393ac2863696c299b783bcaf68ded7fadc008",
+    "scope_summary": "05f5d78adf8ea672e8930af32d7304786e64937828c36bb4a830df6b122b3bf9",
+    "write_raster": "10e4b2bc585cb1ace714999e2088e43d08107512ea7019deb29c5a919aa19fa9",
+    "write_review_raster": "b855add88dd83c8a434e3892627b673fadcef960cefc618aab12fd20d29c6b42",
+    "write_household_raster": "d9b4f7ed28b21a485c6fc8060a2c2677c3160e930aac63b8b81acd716329590f",
+    "enforce_raster_display_priority": "b47894a02f2410774be773eff10cbd4b963c75196f970446ab41c5158175ad30",
+    "enforce_activity_class_raster_priority": "e7de29a0824f84a6aaea79913004e6955fd924e3c532bdc54bf57ff1ddacf8df",
+    "main": "46b0c31f9906af02f858312714a27d289884225d5e4010921fe04cfa5956c80c"
+  },
+  "scripts/prepare_land_history_2021_2025.py": {
+    "sha256": "15d27d164b56654a6364699ad65460ad10960c559d159597d22b1690eb13d8a9",
+    "hex_color": "6979a95ec31295c12b5a42b3745ccbd29ce2d2ce8a0d10c80007e14fb10e5392",
+    "annual_states": "d5e0d8493a369de574cf2bf05398c794f5e457f727eb06fc7d05a88cef982db3",
+    "classify_history": "814d6a138fa23e066c4a32952d1a343f185ae6abf0c14a514a8b56d904a111b3",
+    "render_scope_rasters": "d7c8b0b620e5de73a29d5890c2eea7e1cc6f1578b806422092b8622d0af7eba4",
+    "scope_summary": "c3ffbe05705ec8803ecd25eb28f07fd1c4b7351aabaf52df393151cde7f77d77",
+    "build": "9efb54ddeb68c6876246cba594729f068f741f7f735059ad0459252e7d4af41a"
+  },
+  "scripts/prepare_land_use_type_2021_2025.py": {
+    "sha256": "15d27d164b56654a6364699ad65460ad10960c559d159597d22b1690eb13d8a9",
+    "records": "19f79d88a11631719e369a30a7664d2e5b72f47d1a5cdc1d9a553bc886b3d014",
+    "perennial_signal_count": "1b8f72d6ae02baba9c6e65ff14ed5eaf1e8b479bce81c2578c0e2247500dc7ee",
+    "annual_signal_count": "80a158673b19eedc72f4a41402f8bbd834e722a61fe0fc9054a787187b22f257",
+    "classify": "cc546d066d98c152f9d8fba8178d8bcca073dec69de14f0a388fedcffdf4e5ec",
+    "scope_summary": "120d0dd217c917244fdf1a10aff43beae1f5ddad698e4a8a7679842405340be2",
+    "build": "ef9e8cb29761bcc1e7f6f5dcb825a0c8b15c73c182b8d9bd5e683a914e7903cc"
+  },
+  "scripts/prepare_land_use_type_v2_2021_2025.py": {
+    "sha256": "15d27d164b56654a6364699ad65460ad10960c559d159597d22b1690eb13d8a9",
+    "perennial_signal_count": "4bba37d3bcd4e4fdba842ec0ea86335e6a855c8ad7cd887ebcaf3a2f4cb3c26c",
+    "annual_signal_count": "24529f045ebc3b8a91eeb59268c94332562f91926922cbac2b581323c50fa23e",
+    "classify_yearly_type": "3f59b71b068a152e1c110ba2f40fbe6f311fe531b35c1b1455219f2065552578",
+    "evaluate_cycle_year": "999baf2f4bca14ffe995c5d745b6a0b145d8fc3bbcf64f2ab5895f2b34a54d9e",
+    "summarize_type": "e6836d6299b7d23d07424cbcc71bf319679ee512cba22b1e1cffee5d9cd1b496",
+    "summarize_cycles": "212650e3a7d78332f5f1579cf40fb56a0859262e9840a6c5b50bf4b79eb05341",
+    "stable_sample": "673a8d75bc573196507f3fd3f7e3a32e3400d339878dd122b11225d8c659a176",
+    "build_review_sample": "52f076ae8b8f84e51868bde8b0291623f6dac2050c23b7305715f5f048614a21",
+    "build": "89c737c03f6be451a788f180d0142cf1e659f1b637a0c145436e2523edd3057d"
+  },
+  "scripts/prepare_land_use_type_v2_visual_review.py": {
+    "select_scenes": "45fc5e3754beace7d4ff5437c7203b4418c3aa24582b21d9e60c637dd9bb7758",
+    "read_rgb_scene": "29729cf45350a103a4b1999ac5e1c592cda55aef98a15aba797e1adcbd5eeea2",
+    "crop_rgb": "0e7410ae8e2c4f1be5a8942f37b498b757adee79581aecf0686e9d2907f9943c",
+    "save_review_figure": "213caaa30e52aa4fa590f7296ac3458a9bfb8acca7e5bfb593731c7a45521e9a",
+    "build": "fb432ca195235e4d3622860ca0bd894188e266b4c52724dc361351153ea23019"
+  },
+  "scripts/prepare_lower_hrazdan.py": {
+    "load_collection": "2bb52e2e5fa26f190f0607ee36c3899f1ff9cbd93f140ac5636c6bb2973ca4be",
+    "write_collection": "ae300ee39a8116422fe29239b0d518fa9d87fe5791cc7f91fad7e8784d6260d7",
+    "main": "ea7015578a1b5f76610342cb1cd71ecedf0e06c40e350b6dd6bbd1c0e8a06a0f"
+  },
+  "scripts/prepare_lower_hrazdan_halos.py": {
+    "exterior_only": "b465f30e72789a272b3e6439c6b647882225b1e445449cb92b7b2ca6760c08a5",
+    "main": "a7c098f3ad9f607cac0bdbc1ee1a121a6eb759a156989bb997f8e495c74de743"
+  },
+  "scripts/prepare_lower_hrazdan_zones.py": {
+    "stable_internal_id": "e638f9eaa218c2674d9e7f70b0654edb672a57de637f7c76d07929d16a3bffd0",
+    "clean_source_geometry": "ebc8b1da2452331966a862cc3d0732888454bf36d6b7d441f9c29a4cda3bd446",
+    "parcel_candidates": "48528ccebdad7a8d4aa993a5173922019eb1f6c5c6293a1833a31c59b3499bb7",
+    "main": "03b3db51fe098c8c960ab2e5bd9aba0ec07f99d7e8a1df94efab64e814a79819"
+  },
+  "scripts/prepare_wua_boundaries.py": {
+    "feature_collection": "f85b84d968c5b8576005266ba75749a527bf8e65110539beaed358d527689e4f",
+    "main": "e8fcde27d9f7cb59fc2c9763be4e272d64acc2b58a797d924408bbc1496c311e"
+  },
+  "scripts/road_exclusions.py": {
+    "_minimum_rectangle_dimensions": "ec92ae7d8d1b599b540d97f0c6c47ab3d4f615710bdfe0d17fe65daf209143f3",
+    "_road_intersections": "a95f1dae4fc27f5be1cffc74dfff17ea5e20f5f945388b6fc65e927c9c6c6cdd",
+    "build_road_exclusion_metrics": "e452f944b77b54a463ead9461888d8b5de964794454ce0735369dc47c5c09e28"
+  },
+  "scripts/verify_land_activity_2026.py": {
+    "verify": "e24c627f8f9c2bf6d0844a0d009240840592ae699bbb20a834acafbb1a6061a9"
+  },
+  "scripts/verify_land_history_2021_2025.py": {
+    "verify": "d47d3441056ec3ff9651ccc0ef47dbbdeeb127b9681893ddcc8e19cb642e88ef"
+  },
+  "wp_core/parcel_eo.py": {
+    "_safe_index": "45678b7e74469b87a2a01bf43a062c8f6823d8da9b5786d6b1e67c6a700be70d",
+    "_label_count": "df688bde2650e308a82093a54cf220c716a3fde8146ce24bc56eb7f148c64332",
+    "_label_mean": "8490dcc58fac648acd4b2e0235c9406c3af06e9434609613a560c0d09356bfe4",
+    "_fraction": "a1de50689cb7c968f1a5e3367fba7890faf7e0ba16fe41bf8eac4f97411da912",
+    "aggregate_optical_scene_by_parcel": "e1e2ee7052bfc46083026f11bb979e3843dc7c194f2ec2432a04380222d53025",
+    "add_gap_safe_temporal_features": "4569b07340668d0b6f96465f48fed4a5eecd603a7f15548a55d657a6fe9293a7",
+    "validate_parcel_eo_timeseries": "8c56ce42c3d8505ceb0165c74a0d36c60c5d4184efe202eba4f465b43851aebf"
+  },
+  "wp_core/parcel_identity.py": {
+    "normalize_cadastre_code": "0fcd551afc2db3e4a4ddf4df750b87b153dab64c6f4ef4474df537d0acbe7dbc",
+    "internal_parcel_id": "583ad908799e4aca9448bb10c7b0c27bba1d8e94a43e522d7f5cf71ee9ae45ee",
+    "public_parcel_id": "845d322a31230f52dfa872b5c19de6145a44127ac651b602d0c1bc2f82081453",
+    "build_identity_frame": "53b240f4fa52e6b7125abebac89b9ed7bdc0a015833fd461cb4163586ef958db",
+    "attach_parcel_identity": "36f37c23cfbe120927638d7a4ff286a67743adaecc160c8addaae2bbd566d5b3"
+  },
+  "wp_core/parcel_land_features.py": {
+    "_season_phase": "4d10963f6a32b1a24af64d6b4114a7116cd39c0ef8b9ea33b36fcfaf2d5c9c79",
+    "build_seasonal_parcel_features": "580acf8165a33cd1dd9130688487c732bc372e90408ac922c65b5b9b6bd2f113",
+    "validate_seasonal_parcel_features": "ac463f0286957072352df7def0c1ad302c99e1d47cffea94c6ab3417065af6f8"
+  }
+}

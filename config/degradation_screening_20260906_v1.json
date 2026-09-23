@@ -1,0 +1,12 @@
+{
+  "version": "degradation_screening_20260906_v1",
+  "years": [2021, 2022, 2023, 2024, 2025],
+  "population": 22802,
+  "historically_active_population": 19421,
+  "workers": 3,
+  "quality": {"valid_fraction": 0.95, "minimum_full_pixels": 3, "minimum_full_pixel_area_fraction": 0.70, "minimum_dates_per_month": 2, "maximum_gap_days": 35, "maximum_water_fraction": 0.05},
+  "peers": {"radius_m": 5000, "minimum_peers": 30, "reference_percentile": 90},
+  "deterioration": {"minimum_years": 5, "ndvi_absolute_drop": 0.07, "evi2_absolute_drop": 0.04, "relative_drop": 0.20, "peer_adjusted_drop": 0.15, "ndvi_slope": -0.015, "evi2_slope": -0.01, "minimum_baseline_ndvi": 0.25, "minimum_baseline_evi2": 0.15},
+  "low_performance": {"minimum_years": 3, "ratio": 0.50, "require_2024_and_2025": true, "minimum_reference_ndvi": 0.30, "minimum_reference_evi2": 0.20},
+  "interpretation": "Initial five-year vegetation screening. Uncalibrated local thresholds; no confirmed soil degradation, salinity, crop identity, yield or causal attribution."
+}

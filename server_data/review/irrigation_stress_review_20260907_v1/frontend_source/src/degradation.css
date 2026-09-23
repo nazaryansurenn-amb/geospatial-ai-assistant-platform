@@ -1,0 +1,6 @@
+.land-mode-grid button[data-mode="degradation"] { grid-column:1 / -1; min-height:48px; white-space:normal; overflow-wrap:anywhere; line-height:1.4; letter-spacing:0; }
+.degradation-class input { flex:0 0 18px; width:18px; height:18px; accent-color:#d47732; }
+.degradation-class { min-height:44px; align-items:center; }
+.degradation-class span:last-child { min-width:0; overflow-wrap:anywhere; line-height:1.4; }
+.degradation-section .degradation-focus { background:#734121; border-color:#d47732; }
+.degradation-section .activity-summary dt { overflow-wrap:anywhere; }

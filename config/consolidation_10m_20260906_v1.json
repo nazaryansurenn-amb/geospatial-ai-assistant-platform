@@ -1,0 +1,15 @@
+{
+  "version": "consolidation_10m_20260906_v1",
+  "baseline": "data/analysis/land_consolidation/consolidation_active_20260906_v1",
+  "baseline_complete_sha256": "8aaab52856b3310d760573d9314b18ee1716d6143a9628377547c1ed4304c1a2",
+  "expected_target_count": 4875,
+  "years": [2021, 2022, 2023, 2024, 2025],
+  "publication": "internal_draft_only",
+  "policy": {
+    "minimum_pure_pixels_20m": 0,
+    "green_ndvi": 0.48,
+    "green_evi2": 0.30,
+    "low_ndvi": 0.35,
+    "low_evi2": 0.25
+  }
+}

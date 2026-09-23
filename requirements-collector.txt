@@ -1,0 +1,12 @@
+# Separate analytical dependencies; no changes to the stdlib-only map server.
+numpy==1.26.4
+pandas==2.2.2
+geopandas
+shapely
+rasterio
+pyarrow
+requests==2.32.5
+cdsapi==0.7.7
+ecmwf-datastores-client==0.5.3
+xarray==2026.7.0
+netCDF4==1.7.4

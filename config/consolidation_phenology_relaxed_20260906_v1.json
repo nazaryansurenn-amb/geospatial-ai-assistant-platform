@@ -1,0 +1,20 @@
+{
+  "version": "consolidation_phenology_relaxed_20260906_v1",
+  "source": "data/analysis/land_consolidation/consolidation_small_parcels_20260906_v1",
+  "source_complete_sha256": "b0ba6ae9b6805a0f568f1940147201afc2aa6e8b40daa5905446f1946203cd6f",
+  "publication": "internal_draft_only",
+  "policy": {
+    "minimum_years": 2,
+    "minimum_correlation": 0.65,
+    "maximum_rmse": [0.15, 0.12, 0.12, 0.15],
+    "minimum_phase_agreement": 0.70
+  },
+  "unchanged": [
+    "Each member official area >0 and <=5000 m2; total group area >=5 ha.",
+    "Active-ready scope, household/road masks, meaningful boundaries and overlap safeguards.",
+    "Native spatial support and shared-pixel checks, including valid-area contamination bounds.",
+    "Cloud/valid fractions, minimum 16 actual common dates, maximum 35-day gaps and seasonal contrast.",
+    "Actual 2021-2025 dates, no interpolation, no calendar shifts, no synthetic values.",
+    "Separate four-index and additional 10 m screens; complete-link common-year checks for qualifying groups."
+  ]
+}

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Lanjazat | 2026 Earth Observation</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/vendor/maplibre.css">
+  <link rel="stylesheet" href="/style.css">
+  <script defer src="/vendor/maplibre.js"></script>
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <main class="workspace">
+    <section class="map-surface" aria-label="Lanjazat satellite map">
+      <div id="map"></div>
+      <div class="map-label"><strong lang="hy">Լանջազատ</strong><span>Administrative area</span></div>
+      <p id="map-error" role="alert" hidden></p>
+    </section>
+    <aside aria-label="Analysis layers">
+      <header>
+        <div class="eyebrow">EARTH OBSERVATION / 2026</div>
+        <h1 lang="hy">Լանջազատ</h1>
+        <p class="place">Lanjazat, Armenia</p>
+        <p id="period" class="period">Loading observations...</p>
+      </header>
+      <div class="panel-scroll">
+        <div class="boundary-row">
+          <label><input id="boundary" type="checkbox" checked><span>Administrative boundary</span></label>
+          <strong id="boundary-area"></strong>
+        </div>
+        <fieldset id="layers" disabled>
+          <legend>Observed areas</legend>
+          <div id="layer-options"></div>
+          <label class="layer-option satellite-only"><input type="radio" name="layer" value="none"><span>Satellite only</span></label>
+        </fieldset>
+        <div class="opacity-row"><label for="opacity">Layer opacity</label><output id="opacity-value">65%</output></div>
+        <input id="opacity" type="range" min="0" max="100" value="65">
+        <section class="reading" aria-live="polite">
+          <h2 id="reading-title">Agricultural vegetation</h2>
+          <p id="description"></p>
+          <p id="loading-status" role="status">Loading map...</p>
+        </section>
+        <footer>
+          <p>Approximate EO areas, not cadastral measurements. Categories overlap; do not add their totals.</p>
+          <p id="coverage"></p>
+          <p>Copernicus Sentinel-2 · ESA WorldCover 2021 · ECMWF IFS</p>
+          <a href="https://www.openstreetmap.org/relation/15030684" target="_blank" rel="noreferrer">OSM administrative boundary</a>
+        </footer>
+      </div>
+    </aside>
+  </main>
+</body>
+</html>

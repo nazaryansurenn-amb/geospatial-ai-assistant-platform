@@ -1,0 +1,35 @@
+{
+  "version": "agent_review_20260906_v4",
+  "purpose": "platform identity and relevant conversation; unchanged calculations and frontend",
+  "live_scope_verified": true,
+  "files": {
+    "run_agent_review_v4.py": {
+      "bytes": 1327,
+      "sha256": "cabbdf36129d05224caeed9d24b496bf3927a0cf3a1fa564a10df05e4350d790"
+    },
+    "wp_core/agent_service_v4.py": {
+      "bytes": 19697,
+      "sha256": "725049fc032da36458d3352dd7b200cc1470463d2aa68ba979256d1355447cc3"
+    },
+    "wp_core/agent_knowledge_v4.py": {
+      "bytes": 13951,
+      "sha256": "7aefcd2f33bc13eeed8a0590acc49d2573b98e01ce2c1f6bd4b45780778fdba9"
+    },
+    "wp_core/agent_scope.py": {
+      "bytes": 5631,
+      "sha256": "8a7faa297372791debb698b77386c4abb438ea2d4cec1bcd13570df0344d6f71"
+    },
+    "config/agent_review_20260906_v1.review.lock.json": {
+      "bytes": 1103074,
+      "sha256": "212b953ecb8c552740344e759637146259988650ad8c8a8b46e9c719d618642e"
+    },
+    "config/agent_review_20260906_v2.review.lock.json": {
+      "bytes": 540241,
+      "sha256": "1abcc61fa109a5e4e73f94bb3dd9eca4d88cd410c4452a4437d9f15121a9020d"
+    },
+    "config/agent_review_20260906_v3.review.lock.json": {
+      "bytes": 1136,
+      "sha256": "ecfdc5a9f05b036a6153e3d30e921dd8db5b4f86851df950d3adf45a7acf5f2d"
+    }
+  }
+}

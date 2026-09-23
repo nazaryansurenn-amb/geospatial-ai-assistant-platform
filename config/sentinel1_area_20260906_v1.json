@@ -1,0 +1,17 @@
+{
+  "version": "sentinel1_area_20260906_v1",
+  "scope": "existing_lower_hrazdan_stages_1_2",
+  "expected_eligible": 22802,
+  "years": [2021, 2022, 2023, 2024, 2025],
+  "relative_orbits": [72, 152],
+  "download_workers": 8,
+  "analysis_workers": 6,
+  "negative_increment_tolerance_mm": 0.0001,
+  "minimum_free_gb": 40,
+  "nominal_rain_limit_mm": 1.0,
+  "nominal_excursion_db": 2.0,
+  "classification_inputs_used": false,
+  "public_output": false,
+  "map_change": false,
+  "missing_observations_are_unknown": true
+}

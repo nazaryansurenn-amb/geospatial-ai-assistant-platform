@@ -1,0 +1,75 @@
+{
+  "created_at": "20260905T090628Z",
+  "backup": "LOCAL_ARCHIVE/working_product_before_isolation_20260905T090628Z",
+  "privacy": "internal_only",
+  "method_changes": false,
+  "copies": [
+    {
+      "source": "parcels/delivery/parcels_wua.gpkg",
+      "path": "data/source/cadastre/parcels_wua.gpkg",
+      "bytes": 374763520,
+      "sha256": "12ae2e8d7eb377090b4aff9bd64a3b7980a35d0fca23aff800ace055821e47d2"
+    },
+    {
+      "source": "analysis/land_evidence/cache/lower_hrazdan_eo_terrain_grid_2026.json",
+      "path": "data/source/activity_2026/lower_hrazdan_eo_terrain_grid_2026.json",
+      "bytes": 1153,
+      "sha256": "81a71070b2ea95dd632684c8ff532f2e7deddf8e4c6dc037474a2913d0392083"
+    },
+    {
+      "source": "analysis/land_evidence/cache/lower_hrazdan_eo_terrain_grid_2026.npz",
+      "path": "data/source/activity_2026/lower_hrazdan_eo_terrain_grid_2026.npz",
+      "bytes": 95858869,
+      "sha256": "2c51636abfbc6000d0586d18056ab6f7c1ee6f4d7ce2f683bd0e1ba4a48457e2"
+    },
+    {
+      "source": "analysis/parcel_land_review/versions/lower_hrazdan_parcel_land_review_v3_2026/parcel_land_review.parquet",
+      "path": "data/source/activity_2026/parcel_land_review.parquet",
+      "bytes": 878802,
+      "sha256": "fc95b12c9f4a4b704172c66c3458b6005190aab1bd15d1ba912928d24be055f2"
+    },
+    {
+      "source": "analysis/command_area/lower_hrazdan_command_footprints.geojson",
+      "path": "data/source/halo_inputs/lower_hrazdan_command_footprints.geojson",
+      "bytes": 14761782,
+      "sha256": "d8706af2dc90a6c129674330fb99af815fa5279f9176e1973636b44070bdd00d"
+    },
+    {
+      "source": "analysis/parcel_eo/lower_hrazdan_parcel_eo_scene_manifest_2021.json",
+      "path": "data/source/scene_manifests/lower_hrazdan_parcel_eo_scene_manifest_2021.json",
+      "bytes": 31015,
+      "sha256": "af0698c1025c32c4ce067b0937f113b45d8bcd188ba40953e1c3bae96cf7f71f"
+    },
+    {
+      "source": "analysis/parcel_eo/lower_hrazdan_parcel_eo_scene_manifest_2022.json",
+      "path": "data/source/scene_manifests/lower_hrazdan_parcel_eo_scene_manifest_2022.json",
+      "bytes": 31240,
+      "sha256": "ae34662ab4e73fdfe4cadc5c2845d7b2b9c95208badad6903e963c65836a59ac"
+    },
+    {
+      "source": "analysis/parcel_eo/lower_hrazdan_parcel_eo_scene_manifest_2023.json",
+      "path": "data/source/scene_manifests/lower_hrazdan_parcel_eo_scene_manifest_2023.json",
+      "bytes": 33465,
+      "sha256": "cdef7f557a262e65aba87d3c84786e4dfd67da9a37b74e316836c0bbd2991579"
+    },
+    {
+      "source": "analysis/parcel_eo/lower_hrazdan_parcel_eo_scene_manifest_2024.json",
+      "path": "data/source/scene_manifests/lower_hrazdan_parcel_eo_scene_manifest_2024.json",
+      "bytes": 33467,
+      "sha256": "35d279725abb5a8100210a415ae1ae1bfaaa12ff27db1ad796ba76a9bdfd13ad"
+    },
+    {
+      "source": "analysis/parcel_eo/lower_hrazdan_parcel_eo_scene_manifest_2025.json",
+      "path": "data/source/scene_manifests/lower_hrazdan_parcel_eo_scene_manifest_2025.json",
+      "bytes": 31669,
+      "sha256": "ea3a754aa107025dade30d01b3c38aa463b1e8a4d568c46e4571c9816314d29b"
+    },
+    {
+      "source": "analysis/parcel_eo/lower_hrazdan_parcel_eo_scene_manifest_2026.json",
+      "path": "data/source/scene_manifests/lower_hrazdan_parcel_eo_scene_manifest_2026.json",
+      "bytes": 26508,
+      "sha256": "56686e88374a808c444517ef515b6f073b06fd582686324809b521c4774f4e3a"
+    }
+  ],
+  "helper_extraction": "Exact function bodies; only imports and local input paths change."
+}

@@ -1,0 +1,43 @@
+# --- Private inputs and generated outputs. Never commit. ---
+/data/
+/output/
+/outputs/
+/dist/
+/dist_use_type_v2/
+/releases/
+/public/
+/deployment/
+/tools/*/data/
+/tools/*/output/
+
+# server_data holds analysis results and credentials; only the current
+# release's frontend source is versioned.
+/server_data/*
+!/server_data/review/
+/server_data/review/*
+!/server_data/review/irrigation_stress_review_20260907_v1/
+/server_data/review/irrigation_stress_review_20260907_v1/*
+!/server_data/review/irrigation_stress_review_20260907_v1/frontend_source/
+
+# --- Private notes and local launchers ---
+/AGENTS.md
+/docs/reference/
+/docs/CAREER_*
+*_RU.md
+/START_*.bat
+/New Text Document.txt
+
+# --- Secrets ---
+.env
+# any other *.env variant. .env.example is NOT matched.
+*.env
+cds_credentials.json
+
+# --- Environments, caches, logs ---
+.venv/
+node_modules/
+__pycache__/
+.pytest_cache/
+.pytest_tmp*/
+.ruff_cache/
+*.log

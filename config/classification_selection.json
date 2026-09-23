@@ -1,0 +1,16 @@
+{
+  "version": "transitions_20260906_v3_owner_v1",
+  "baseline": "data/analysis/observation_screening/transitions_20260906_v3",
+  "output": "data/analysis/observation_screening/transitions_20260906_v3_owner_v1",
+  "decision_date": "2026-09-06",
+  "owner_approved_rule": true,
+  "selected_method": "Transitions v3",
+  "years": [2021, 2022, 2023, 2024, 2025],
+  "application_stage": "after_predominant_parcel_summary",
+  "annual_uncertain_cycle_assignment": "single_cycle",
+  "undetermined_type_assignment": "unchanged",
+  "calculation_scope": "existing_control_120",
+  "full_area_run_authorized": false,
+  "public_release_change_authorized": false,
+  "further_method_experiments": "stopped_pending_owner_request"
+}

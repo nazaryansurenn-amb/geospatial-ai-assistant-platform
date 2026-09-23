@@ -1,0 +1,19 @@
+{
+  "version": "consolidation_strip_priority_20260906_v1",
+  "source": "data/analysis/land_consolidation/consolidation_joint_eo_20260906_v1",
+  "source_complete_sha256": "a7a721857a39d6cbf2606c4cb6ba3c6a46aa2a6917fa6c3a4ca05f4b59fb6021",
+  "maximum_member_area_m2": 10000.0,
+  "minimum_group_area_ha": 3.0,
+  "expected_eligible_parcels": 14187,
+  "publication": "internal_draft_only",
+  "strip_policy": {
+    "minimum_length_m": 100.0,
+    "maximum_width_m": 40.0,
+    "minimum_elongation": 4.0,
+    "minimum_rectangularity": 0.55,
+    "minimum_group_strip_area_fraction": 0.50
+  },
+  "shape_mode": "priority_filter_not_population_exclusion",
+  "evidence_mode": "shared_pixels_allowed_joint_10m_evidence",
+  "road_policy": "Preserve existing road, mapped-barrier and overlap review states. No override from narrow shape."
+}

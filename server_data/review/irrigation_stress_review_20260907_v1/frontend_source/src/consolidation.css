@@ -1,0 +1,8 @@
+.land-mode-grid button[data-mode="consolidation"] { grid-column: 1 / -1; min-height: 48px; white-space: normal; overflow-wrap: anywhere; line-height: 1.4; letter-spacing: 0; }
+.consolidation-class input { flex: 0 0 18px; width: 18px; height: 18px; accent-color: #bd83f3; }
+.consolidation-class { min-height: 44px; align-items: center; }
+.consolidation-class span:last-child { min-width: 0; overflow-wrap: anywhere; line-height: 1.4; }
+.consolidation-picker { display: grid; gap: 5px; font-size: 13px; margin-top: 10px; }
+.consolidation-picker select { width: 100%; min-width: 0; min-height: 42px; color: #f7faf8; background: #263c33; border: 1px solid #72877b; border-radius: 4px; padding: 6px 8px; font: inherit; }
+.consolidation-focus { width: 100%; min-height: 42px; margin-top: 8px; color: #f7faf8; background: #614481; border: 1px solid #bba0d6; border-radius: 4px; font: inherit; font-size: 13px; cursor: pointer; }
+.consolidation-focus:disabled { opacity: .45; cursor: default; }

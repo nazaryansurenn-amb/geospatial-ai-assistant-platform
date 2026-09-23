@@ -1,0 +1,18 @@
+{
+  "version": "consolidation_joint_eo_20260906_v1",
+  "baseline_complete_sha256": "8aaab52856b3310d760573d9314b18ee1716d6143a9628377547c1ed4304c1a2",
+  "maximum_member_area_m2": 5000.0,
+  "minimum_group_area_ha": 5.0,
+  "expected_eligible_parcels": 11686,
+  "publication": "internal_draft_only",
+  "evidence_mode": "shared_pixels_allowed_joint_10m_evidence",
+  "primary_indices": ["ndvi", "evi2"],
+  "context_indices": ["ndmi", "bsi"],
+  "pure_pixel_and_width_gate": false,
+  "policy": {
+    "minimum_years": 2,
+    "minimum_correlation": 0.65,
+    "maximum_rmse": [0.15, 0.12, 0.12, 0.15],
+    "minimum_phase_agreement": 0.70
+  }
+}

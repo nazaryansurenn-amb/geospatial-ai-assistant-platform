@@ -1,0 +1,15 @@
+{
+  "version": "sentinel1_peer_2021_2025_20260906_v1",
+  "radar_version": "sentinel1_pilot_2021_2025_20260906_v1",
+  "years": [2021, 2022, 2023, 2024, 2025],
+  "season_months": [4, 5, 6, 7, 8, 9],
+  "weather_months": [3, 4, 5, 6, 7, 8, 9],
+  "relative_orbits": [72, 152],
+  "download_workers": 4,
+  "original_pilot": "data/observations/sentinel1_pilot_20260906_v1",
+  "comparison_rules": "config/sentinel1_peer_comparison_20260906_v1.json",
+  "catalogue_directory": "server_data/review/sentinel1_peer_2021_2025_20260906_v1/catalogue",
+  "classification_inputs_used": false,
+  "public_output": false,
+  "bulk_llm_calls": 0
+}

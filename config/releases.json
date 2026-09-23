@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "releases": {
+    "working": {
+      "directory": "releases/working_20260905T090943Z",
+      "manifest_sha256": "ef0eaa19ebc3e3d7271721e279acb84f376aabf16eda70735aa0d56b062026fe"
+    },
+    "use_type_review": {
+      "directory": "releases/use_type_review_20260905T090943Z",
+      "manifest_sha256": "53c575574c8a807f298c6028af52cda393c43af4f3ef2ee70c125643445779b0"
+    }
+  }
+}

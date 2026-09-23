@@ -1,0 +1,76 @@
+{
+  "version": "irrigation_stress_20260907_v2",
+  "current_year": 2026,
+  "as_of": "2026-09-05",
+  "eo_version": "current_stress_inputs_20260907_v2",
+  "weather_version": "current_stress_weather_20260907_v1",
+  "historical_years": [
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "backtest_years": [
+    2024,
+    2025
+  ],
+  "workers": 3,
+  "quality": {
+    "valid_fraction": 0.95,
+    "maximum_water_fraction": 0.05,
+    "minimum_sampling_area_m2": 1200,
+    "minimum_effective_pixels_20m": 3
+  },
+  "baseline": {
+    "start": "08-01",
+    "end": "08-20",
+    "minimum_dates": 3,
+    "minimum_span_days": 7
+  },
+  "recent": {
+    "start": "08-27",
+    "end": "09-05",
+    "maximum_age_days": 3,
+    "minimum_separation_days": 3
+  },
+  "vegetation": {
+    "ndvi": 0.4,
+    "evi2": 0.2,
+    "fraction": 0.5,
+    "minimum_retention": 0.75,
+    "maximum_fraction_drop": 0.2,
+    "maximum_bare_increase": 0.15,
+    "maximum_pair_ndvi_drop": 0.15,
+    "maximum_pair_evi2_drop": 0.12
+  },
+  "signal": {
+    "repeated_ndmi_drop": 0.08,
+    "peer_adjusted_drop": 0.05,
+    "historical_adjusted_drop": 0.04
+  },
+  "peers": {
+    "radius_m": 5000,
+    "minimum": 20,
+    "baseline_ndvi_difference": 0.12,
+    "baseline_evi2_difference": 0.12,
+    "baseline_vegetation_difference": 0.2,
+    "recent_ndvi_difference": 0.12,
+    "maximum_date_difference_days": 2
+  },
+  "history": {
+    "minimum_comparable_years": 2,
+    "baseline_ndvi_difference": 0.15,
+    "recent_ndvi_difference": 0.15
+  },
+  "weather": {
+    "model": "ecmwf_ifs",
+    "timezone": "UTC",
+    "days": 14,
+    "minimum_et0_mm": 25,
+    "maximum_rain_et0_ratio": 0.5,
+    "recent_hours": 48,
+    "maximum_recent_rain_mm": 5
+  },
+  "claim": "Possible optical irrigation-stress signs using area-weighted parcel observations. Boundary pixels may be shared: this is screening of land around/within parcels, not independent parcel confirmation or measured stressed hectares. No irrigation volume or ground-truth accuracy."
+}

@@ -1,0 +1,22 @@
+{
+  "version": "observations_2021_2025_v1",
+  "years": [2021, 2022, 2023, 2024, 2025],
+  "scope": "lower_hrazdan_stage_1_and_2_without_household_and_roads",
+  "basis": "data/analysis/parcel_eo/current_halo_v1/current_parcels.parquet",
+  "working_release": "working",
+  "expected_population": 43984,
+  "expected_eligible": 22802,
+  "crs": "EPSG:32638",
+  "indices": ["ndvi", "evi", "evi2", "gndvi", "savi", "msavi2", "ndre", "ci_rededge", "mtci", "ireci", "ndmi", "msi", "bsi", "ndwi", "mndwi", "nbr", "nbr2", "psri"],
+  "eo_collections": ["sentinel-2-c1-l2a", "sentinel-2-l2a"],
+  "minimum_free_gb": 40,
+  "maximum_cache_gb": 150,
+  "maximum_attempts": 3,
+  "request_timeout_seconds": 60,
+  "weather": {
+    "provider": "copernicus_cds",
+    "dataset": "reanalysis-era5-land",
+    "timezone": "Asia/Yerevan",
+    "credential_env": "CDSAPI_KEY"
+  }
+}

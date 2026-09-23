@@ -1,0 +1,14 @@
+{
+  "version": "hectares_review_20260906_v2",
+  "frontend": "hectares_review_20260906_v1",
+  "files": {
+    "run_hectares_review_v2.py": {
+      "bytes": 561,
+      "sha256": "08393af18ebfade814cb5b8476a6de0ca5e56c7439ac88f084737fb40558cb8a"
+    },
+    "config/hectares_review_20260906_v1.review.lock.json": {
+      "bytes": 562194,
+      "sha256": "5c9642508f2f00092bb255b33e507d65d54f8bf534338747e542a3e4e44209ed"
+    }
+  }
+}
