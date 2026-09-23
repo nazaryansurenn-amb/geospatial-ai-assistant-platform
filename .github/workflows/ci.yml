@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install ruff==0.16.*
+
+      - name: Lint (errors only, see ruff.toml)
+        run: ruff check . --output-format=github
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-analytics.lock.txt
+
+      - name: Install pinned analytical dependencies
+        run: "pip install --only-binary=:all: -r requirements-analytics.lock.txt"
+
+      # Tests that need the private parcel data, outputs or releases are skipped
+      # by tests/conftest.py when those folders are absent.
+      - name: Unit tests
+        run: python -B -m pytest -q
