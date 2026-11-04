@@ -14,7 +14,7 @@ FRONTEND = ROOT / "output/frontend_consolidation_review_20260906_v2"
 def verify(phase):
     port = 8527 if phase == "before" else 8526
     lookup = json.loads((REVIEW / "parcel_lookup.json").read_text())
-    codes = sorted(lookup)[::20] + ["04-087-0119-0005", "04-002-0145-0007", "04-023-0135-0011"]
+    codes = sorted(lookup)[::20] + ["04-087-9119-0005", "04-002-9145-0007", "04-023-9135-0011"]
     paths = ["/health", "/api/land/delivery", "/api/land/consolidation"]
     paths += [f"/api/land/parcel?code={code}" for code in codes]
     replies = {}

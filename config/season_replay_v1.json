@@ -1,0 +1,207 @@
+{
+ "version": "season_replay_v1",
+ "frozen": "2026-11-01, before the first run; agronomy method docs/IRRIGATION_AGENT_PILOT_AGRONOMY_2026_11_01_EN.md section 6, cadence and wording docs/IRRIGATION_AGENT_PILOT_PLAN_2026_11_01_EN.md",
+ "purpose": "Replay of a season week by week: where the WUA may wish to look first for irrigation turns. Draft screening from satellite greenness/moisture and weather; not delivery records, not orders.",
+ "years": {
+  "replay": 2026,
+  "compare": 2025,
+  "range": [
+   2021,
+   2025
+  ]
+ },
+ "weeks": {
+  "first_iso_week": 10,
+  "last_iso_week": 43,
+  "cutoff": "Sunday 24:00 local of the ISO week"
+ },
+ "reference_years": {
+  "2026": [
+   2021,
+   2022,
+   2023,
+   2024,
+   2025
+  ],
+  "2025": [
+   2021,
+   2022,
+   2023,
+   2024
+  ],
+  "2024": [
+   2021,
+   2022,
+   2023
+  ],
+  "2023": [
+   2021,
+   2022
+  ],
+  "2022": [
+   2021
+  ],
+  "2021": []
+ },
+ "clear_view": {
+  "min_valid_fraction": 0.6,
+  "max_age_days_mar_may": 14,
+  "max_age_days_jun_oct": 10,
+  "ndvi_range": [
+   -1,
+   1
+  ]
+ },
+ "season_start": "02-01",
+ "land_types": {
+  "source": "land types v1.4 (frozen); static map built in late 2026 = stated hindsight leak",
+  "kc_full": {
+   "field": 1.1,
+   "orchard": 1.05,
+   "vineyard": 0.78,
+   "perennial": 0.95
+  },
+  "map": {
+   "FIELD_CROP": "field",
+   "NO_CROP": "field",
+   "CROPLAND_UNCERTAIN": "field",
+   "ORCHARD": "orchard",
+   "VINEYARD": "vineyard",
+   "PERENNIAL": "perennial"
+  },
+  "kc_calendar": {
+   "orchard": [
+    0.4,
+    0.55,
+    0.8,
+    1.0,
+    1.05,
+    1.05,
+    0.85,
+    0.6
+   ],
+   "vineyard": [
+    0.15,
+    0.3,
+    0.5,
+    0.7,
+    0.78,
+    0.78,
+    0.6,
+    0.4
+   ],
+   "perennial": [
+    0.3,
+    0.45,
+    0.65,
+    0.85,
+    0.95,
+    0.95,
+    0.75,
+    0.5
+   ],
+   "months": "March..October"
+  }
+ },
+ "kc_from_ndvi": {
+  "ndvi_bare": 0.15,
+  "ndvi_full": 0.8,
+  "kc_min": 0.15,
+  "cover_gain": 1.5
+ },
+ "score": {
+  "weights": {
+   "demand": 0.5,
+   "dryness": 0.3,
+   "weather": 0.2
+  },
+  "demand_mm_full": 60,
+  "dryness_ndmi_span": 0.1,
+  "weather_et0_low_mm": 35,
+  "weather_et0_span_mm": 25,
+  "narrow_width_m": 20,
+  "inner_valid_min": 0.6
+ },
+ "stage_weight": {
+  "field": {
+   "3": 0.3,
+   "4": 0.6,
+   "5": 1.0,
+   "6": 1.0,
+   "7": 1.0,
+   "8": 0.8,
+   "9": 0.6,
+   "10": 0.3
+  },
+  "orchard": {
+   "3": 0.3,
+   "4": 0.6,
+   "5": 0.8,
+   "6": 1.0,
+   "7": 1.0,
+   "8": 1.0,
+   "9": 0.6,
+   "10": 0.3
+  },
+  "vineyard": {
+   "3": 0.2,
+   "4": 0.4,
+   "5": 0.8,
+   "6": 0.8,
+   "7": 0.8,
+   "8a": 0.8,
+   "8b": 0.6,
+   "9": 0.6,
+   "10": 0.3
+  },
+  "perennial": {
+   "3": 0.3,
+   "4": 0.6,
+   "5": 0.8,
+   "6": 1.0,
+   "7": 1.0,
+   "8": 0.9,
+   "9": 0.6,
+   "10": 0.3
+  },
+  "early_peak": {
+   "weight": 0.3,
+   "peak_before": "05-31",
+   "after": "06-10",
+   "below_share_of_peak": 0.7
+  }
+ },
+ "guards": {
+  "drop_ndvi": 0.15,
+  "drop_window_days": 16,
+  "drop_bsi_rise": 0.05,
+  "guard_days": 16,
+  "guard_days_after_regrow": 21,
+  "bare_ndvi": 0.25,
+  "drop_confirm": "the drop must hold on two consecutive clear views (agronomy rule 'one date never makes a sign'); set after the first one-week smoke test showed 9% single-view drops from cloud artefacts, before the build"
+ },
+ "effective_rain_share": 0.75,
+ "community": {
+  "min_scored_share": 0.3,
+  "attention_min_scored_share": 0.4,
+  "max_markers": 3
+ },
+ "levels": [
+  {
+   "key": "attention",
+   "min_score": 60
+  },
+  {
+   "key": "watch",
+   "min_score": 40
+  },
+  {
+   "key": "none",
+   "min_score": 0
+  }
+ ],
+ "uncertainty": {
+  "kc_rel": 0.25,
+  "note": "Range shown = middle estimate x 0.75 .. x 1.25 (crop coefficient); ET0 from a coarse reanalysis grid; full crop requirement, not what fields actually receive; efficiency not applied"
+ }
+}

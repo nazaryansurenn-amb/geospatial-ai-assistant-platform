@@ -4,6 +4,8 @@ The public repository holds code, tests and documentation only. The parcel
 databases, analysis outputs, preserved releases and the local .venv stay on the
 owner's machine. Where they are present, every test runs as before.
 """
+import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
@@ -54,13 +56,34 @@ REQUIRES_PRIVATE_INPUTS = {
     "tests/test_standalone.py::test_http_runtime_and_internal_files_not_served[use_type_review]",
     "tests/test_standalone.py::test_http_runtime_and_internal_files_not_served[working]",
     "tests/test_standalone.py::test_local_environment_not_old_site_packages",
+    "tests/test_canal_ops_payload_review_v1.py::test_approve_refuses_without_owner_flag_or_terminal",
+    "tests/test_photo_review.py::CrashSafety::test_reconcile_states_add_up",
+    "tests/test_plan_v6_owner_decisions.py::test_guard_records_reads_and_blocks_an_archive_open",
+}
+
+
+# Tests that import the optional Claude Agent SDK (live mode only).
+REQUIRES_AGENT_SDK = {
+    "tests/test_canal_ops_router.py::test_g10_live_scope_and_scrubbed_dates",
+}
+HAS_AGENT_SDK = importlib.util.find_spec("claude_agent_sdk") is not None
+
+# Tests whose paths are Windows drive paths ("D:/..." is relative elsewhere).
+WINDOWS_ONLY = {
+    "tests/test_plan_v6_owner_decisions.py::test_guard_refuses_archive_parent_and_outside_paths",
 }
 
 
 def pytest_collection_modifyitems(config, items):
-    if HAS_PRIVATE_INPUTS:
-        return
-    skip = pytest.mark.skip(reason="needs private inputs that are not in the public repository")
-    for item in items:
-        if item.nodeid in REQUIRES_PRIVATE_INPUTS:
-            item.add_marker(skip)
+    skips = []
+    if not HAS_PRIVATE_INPUTS:
+        skips.append((REQUIRES_PRIVATE_INPUTS, "needs private inputs that are not in the public repository"))
+    if not HAS_AGENT_SDK:
+        skips.append((REQUIRES_AGENT_SDK, "needs the optional Claude Agent SDK"))
+    if sys.platform != "win32":
+        skips.append((WINDOWS_ONLY, "uses Windows drive paths"))
+    for nodeids, reason in skips:
+        skip = pytest.mark.skip(reason=reason)
+        for item in items:
+            if item.nodeid in nodeids:
+                item.add_marker(skip)

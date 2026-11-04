@@ -159,7 +159,7 @@ def execute():
             write_table(OUT / f"{name}.parquet", frame)
         for name, frame in (("blocks", blocks), ("priority_blocks", priority)):
             write_json(OUT / f"{name}.geojson", json.loads(frame.drop(columns="member_ids").to_crs(4326).to_json(drop_id=True)))
-        example = scope[scope.cadastre_code.eq("04-087-0119-0005")].iloc[0]
+        example = scope[scope.cadastre_code.eq("04-087-9119-0005")].iloc[0]
         report = {"version": config["version"], "created_at": now(), "active_scope": len(scope), "eligible_parcels": len(register),
             "eligible_strip_parcels": int(register.long_narrow.sum()), "neighboring_parcels": len(participants),
             "adjacent_pairs": len(edges), "all_pair_checks": len(used), "new_pair_calculations": computed,

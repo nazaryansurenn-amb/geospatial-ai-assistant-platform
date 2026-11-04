@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Label Unclassified Parcels</title>
+<style>
+:root{--bg:#f4f5f2;--card:#fff;--ink:#1d2a24;--muted:#5d6b64;--line:#dde3de;--accent:#176b56}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a17;--card:#1d2420;--ink:#e6ece8;--muted:#a3b0a9;--line:#2e3833;--accent:#5cc2a0}}
+:root[data-theme="dark"]{--bg:#141a17;--card:#1d2420;--ink:#e6ece8;--muted:#a3b0a9;--line:#2e3833;--accent:#5cc2a0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,"Segoe UI",sans-serif}
+main{max-width:1280px;margin:0 auto;padding:10px 16px 24px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px}h1{font-size:18px;margin:0}.muted{color:var(--muted);font-size:13px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:6px 0 10px}.bar>div{height:100%;background:var(--accent)}
+.layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px}
+.map{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:6px;background:#2a2f2c}
+.map canvas,.map svg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.map polygon{fill:none;stroke:#ffd600;stroke-width:2.5}
+.zoom{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px;z-index:2}
+.zoom button{min-height:40px;width:44px;padding:0;text-align:center;font-size:20px;font-weight:600;opacity:.92}
+.short{display:none}#noteRow{display:block}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+button{font:inherit;padding:9px 10px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;text-align:left;min-height:42px}
+button.picked{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+kbd{display:inline-block;min-width:20px;text-align:center;border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:12px;margin-right:6px}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
+input{font:inherit;padding:7px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);width:100%;margin-top:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.row button{min-height:36px;padding:6px 10px}
+#chart{width:100%;height:auto;display:block}#chart text{fill:var(--muted);font-size:11px}
+.yr{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+#guess{font-size:13px;margin-top:6px}#saved{font-size:13px;color:var(--accent);min-height:18px}
+/* PC view (yesterday's layout): two columns, zoom buttons and Google/Bing under the photo */
+body.pc .zoom{display:none}
+body:not(.pc) .pcrow{display:none}
+.view{font-size:12px;margin-left:auto}.view a{color:var(--accent);cursor:pointer;margin-left:8px}
+@media (max-width:860px){body:not(.pc) .layout{grid-template-columns:minmax(0,1fr)}body:not(.pc) .card{min-width:0}}
+/* phone view: everything for one parcel on one screen, large tap targets */
+body.phone{font-size:14px}body.phone main{padding:4px 6px 6px}
+body.phone h1,body.phone .help,body.phone #photo,body.phone #keysRow kbd{display:none}
+body.phone header{gap:6px}body.phone #progress{font-size:12px}body.phone .bar{margin:3px 0 5px;height:4px}
+body.phone .layout{gap:5px;grid-template-columns:minmax(0,1fr)}body.phone .card{padding:5px;border-radius:6px;min-width:0}
+body.phone .map{aspect-ratio:auto;height:38vh}
+body.phone #meta{font-size:12px;line-height:1.3}
+body.phone #chart{height:14vh;width:100%}
+body.phone .yr{font-size:10px;gap:6px;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;margin-top:0}
+body.phone .types{grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:4px}
+body.phone .types button{min-height:46px;padding:4px 5px;font-size:13px;text-align:center;line-height:1.15}
+body.phone .types kbd{display:none}body.phone .types .sw{display:block;margin:0 auto 3px;width:100%;height:4px}
+body.phone .long{display:none}body.phone .short{display:inline}
+body.phone #noteRow{display:none}body.phone #noteRow.open{display:block}body.phone input{margin-top:4px;padding:6px}
+body.phone .row{margin-top:4px;gap:4px;flex-wrap:nowrap}
+body.phone .row button{flex:1;min-height:40px;padding:4px;text-align:center;font-size:13px}
+body.phone #saved,body.phone #guess{font-size:12px;min-height:0;margin-top:2px}
+</style></head><body><main>
+<header><h1>Label unclassified parcels</h1><span class="muted" id="progress">Loading…</span>
+  <span class="view muted">View:<a id="toPc">PC</a><a id="toPhone">Phone</a></span></header>
+<div class="bar"><div id="barfill" style="width:0"></div></div>
+<div class="layout">
+  <section class="card">
+    <div class="map"><canvas id="canvas" width="768" height="768"></canvas><svg viewBox="0 0 768 768" preserveAspectRatio="xMidYMid slice" id="shape"></svg>
+      <div class="zoom"><button id="zin" title="Zoom in (Z)">+</button><button id="zout" title="Zoom out (X)">−</button></div></div>
+    <p class="muted" id="photo"></p>
+    <div class="row pcrow"><button id="zin2"><kbd>Z</kbd>Zoom in</button><button id="zout2"><kbd>X</kbd>Zoom out</button>
+      <a class="muted" id="gl" target="_blank" rel="noopener noreferrer" style="align-self:center">Google</a>
+      <a class="muted" id="bl" target="_blank" rel="noopener noreferrer" style="align-self:center">Bing</a></div>
+  </section>
+  <section class="card">
+    <div class="muted" id="meta"></div>
+    <svg id="chart" viewBox="0 0 420 190"></svg>
+    <div class="yr" id="years"></div>
+    <div class="types" id="types"></div>
+    <div id="noteRow"><input id="note" maxlength="300" placeholder="Comment (N to type, Enter to save)"></div>
+    <div id="guess" class="muted"></div>
+    <div id="saved" role="status"></div>
+    <div class="row" id="keysRow"><button id="prev"><kbd>←</kbd>Back</button><button id="next"><kbd>→</kbd>Skip</button>
+      <button id="todo"><kbd>U</kbd><span class="long">Next unanswered</span><span class="short">Next new</span></button>
+      <button id="g"><kbd>G</kbd><span class="long">AI guess</span><span class="short">AI</span></button>
+      <button id="noteBtn" class="short" title="Comment">✎</button></div>
+    <p class="muted help">Phone: swipe left = skip, swipe right = back. Keys: 1–8 type, 0 can't tell, → skip, ← back, Z/X zoom, G AI guess, N comment, U next unanswered.
+      A pick saves and moves on. Largest parcels first.</p>
+  </section>
+</div></main>
+<script>
+// view: PC (two columns, keyboard) or phone (one screen, taps); remembered per device, switchable in the header
+(function () {
+  let v = null; try { v = localStorage.getItem("labelView"); } catch (e) {}
+  if (!v) v = (window.innerWidth <= 600 || matchMedia("(pointer:coarse)").matches) ? "phone" : "pc";
+  document.body.classList.add(v);
+})();
+function setView(v) { try { localStorage.setItem("labelView", v); } catch (e) {} document.body.classList.remove("pc", "phone"); document.body.classList.add(v); }
+document.getElementById("toPc").onclick = () => setView("pc"); document.getElementById("toPhone").onclick = () => setView("phone");
+const T = {FIELD_CROP: ["Field crops", "#f2c230", "1", "Field crops"], NO_CROP: ["No crop in 2025", "#e9dcbc", "2", "No crop"],
+  VINEYARD: ["Vineyard", "#9b4fd1", "3", "Vineyard"], ORCHARD: ["Orchard", "#2fa84f", "4", "Orchard"],
+  NON_FARM: ["Not farmland", "#8d949b", "5", "Not farm"], GREENHOUSE: ["Greenhouse", "#56c6f0", "6", "Greenhouse"],
+  CROPLAND_UNCERTAIN: ["Field land, 2025 use unknown", "#d8b65a", "7", "Field, use ?"],
+  PERENNIAL: ["Perennial, type unknown", "#4f9a8c", "8", "Perennial ?"], cannot_tell: ["Can't tell", "#bbbbbb", "0", "Can't tell"]};
+let items = [], done = {}, i = 0, zoom = 18, guessSeen = false;
+const $ = id => document.getElementById(id);
+const world = (lon, lat, z) => { const s = 256 * 2 ** z, r = lat * Math.PI / 180; return [(lon + 180) / 360 * s, (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * s]; };
+const rings = it => it.parts && it.parts.length ? it.parts : [it.outline];
+function fit(it) {
+  let z = Math.min(19, it.photo.max_zoom);
+  for (; z > 15; z--) { const p = rings(it).flat().map(([x, y]) => world(x, y, z)), xs = p.map(q => q[0]), ys = p.map(q => q[1]);
+    if (Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) * 1.6 <= 768) break; }
+  return z;
+}
+function tiles(it, z, draw) {
+  const pts = rings(it).flat().map(([x, y]) => world(x, y, z));
+  const cx = (Math.min(...pts.map(p => p[0])) + Math.max(...pts.map(p => p[0]))) / 2, cy = (Math.min(...pts.map(p => p[1])) + Math.max(...pts.map(p => p[1]))) / 2;
+  const ox = cx - 384, oy = cy - 384, list = [];
+  for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + 767) / 256); tx++) for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + 767) / 256); ty++)
+    list.push([tx, ty, `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}`]);
+  return {ox, oy, list};
+}
+function drawMap(it) {
+  const {ox, oy, list} = tiles(it, zoom), ctx = $("canvas").getContext("2d"), token = Symbol(); drawMap.token = token;
+  ctx.fillStyle = "#2a2f2c"; ctx.fillRect(0, 0, 768, 768);
+  for (const [tx, ty, url] of list) { const img = new Image(); img.onload = () => { if (drawMap.token === token) ctx.drawImage(img, tx * 256 - ox, ty * 256 - oy); }; img.src = url; }
+  $("shape").innerHTML = rings(it).map(r => `<polygon points="${r.map(([x, y]) => world(x, y, zoom)).map(([x, y]) => `${(x - ox).toFixed(1)},${(y - oy).toFixed(1)}`).join(" ")}"/>`).join("");
+}
+function preload(k) { const it = items[k]; if (!it) return; for (const [, , url] of tiles(it, fit(it)).list) { const img = new Image(); img.src = url; } }
+const COLORS = {2021: "#c9d3cd", 2022: "#aebcb4", 2023: "#8fa39a", 2024: "#5f8a76", 2025: "#d93025"};
+function chart(it) {
+  const W = 420, H = 190, L = 30, R = 8, Tp = 8, B = 22, x = m => L + (W - L - R) * m / 11, y = v => Tp + (H - Tp - B) * (1 - v);
+  let s = [0, .25, .5, .75, 1].map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="currentColor" opacity=".12"/><text x="2" y="${y(v) + 4}">${v}</text>`).join("");
+  s += "JFMAMJJASOND".split("").map((c, m) => `<text x="${x(m) - 3}" y="${H - 6}">${c}</text>`).join("");
+  for (const yr of ["2021", "2022", "2023", "2024", "2025"]) {
+    const v = it.ndvi[yr] || [], pts = v.map((n, m) => n == null ? null : `${x(m).toFixed(1)},${y(n).toFixed(1)}`).filter(Boolean);
+    if (pts.length > 1) s += `<polyline points="${pts.join(" ")}" fill="none" stroke="${COLORS[yr]}" stroke-width="${yr === "2025" ? 3 : 1.6}"/>`;
+  }
+  $("chart").innerHTML = s + `<text x="${W - 120}" y="18" style="fill:#d93025">2025 (red)</text><text x="${W - 120}" y="32">2021→24 light→dark</text>`;
+  $("years").innerHTML = ["2021", "2022", "2023", "2024", "2025"].map(yr => `<span>${yr}: ${it.green_days[yr] ?? "–"} green days, ${it.cuts[yr] ?? 0} cuts</span>`).join("");
+}
+function show() {
+  const it = items[i], d = done[it.id]; zoom = fit(it); guessSeen = false; drawMap(it); chart(it); preload(i + 1); preload(i + 2);
+  $("meta").innerHTML = `<b>${i + 1}/${items.length}</b> · ${it.community || ""} · <b>${it.area_ha.toFixed(2)} ha</b> · ${it.width_m ? it.width_m.toFixed(0) + " m" : ""}`
+    + ` · photo ${it.photo.date}${it.photo.current ? "" : " <b style=\"color:#d93025\">OLD</b>"}`
+    + ` · <a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/@${it.lat},${it.lon},150m/data=!3m1!1e3">Google</a>`
+    + ` · <a target="_blank" rel="noopener noreferrer" href="https://www.bing.com/maps?cp=${it.lat}~${it.lon}&lvl=19&style=a">Bing</a>`;
+  $("photo").textContent = `Photo ${it.photo.date}${it.photo.current ? "" : " (OLD)"} · ${it.photo.resolution_m} m · zoom ${zoom}`;
+  $("gl").href = `https://www.google.com/maps/@${it.lat},${it.lon},150m/data=!3m1!1e3`; $("bl").href = `https://www.bing.com/maps?cp=${it.lat}~${it.lon}&lvl=19&style=a`;
+  [...$("types").children].forEach(b => b.classList.toggle("picked", !!d && b.dataset.k === d.type));
+  $("note").value = d && d.note ? d.note : ""; $("guess").textContent = ""; $("saved").textContent = d ? `Saved: ${T[d.type][0]}` : "";
+  const n = Object.keys(done).length, ha = items.filter(x => done[x.id]).reduce((a, x) => a + x.area_ha, 0), tot = items.reduce((a, x) => a + x.area_ha, 0);
+  $("progress").textContent = `${n} / ${items.length} labelled · ${ha.toFixed(0)} of ${tot.toFixed(0)} ha`; $("barfill").style.width = `${100 * n / items.length}%`;
+}
+async function save(type) {
+  const it = items[i], body = {id: it.id, type, note: $("note").value, guess_seen: guessSeen};
+  const r = await fetch("api/answer", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  if (!r.ok) { $("saved").textContent = "NOT SAVED: " + (await r.json()).error; return; }
+  const res = await r.json();
+  done[it.id] = {type, note: body.note}; if (navigator.vibrate && document.body.classList.contains("phone")) navigator.vibrate(12);
+  // another device saved answers this page does not know yet: reload the list before moving on
+  if (res.done > Object.keys(done).length) await refreshDone();
+  $("noteRow").classList.remove("open"); nextTodo();
+}
+// the list of answered parcels can be changed from another device (phone and computer): keep it fresh
+async function refreshDone() {
+  try { const a = await fetch("api/answers").then(r => r.json()); if (a && !a.error) done = a; } catch (e) { /* offline: keep the local list */ }
+}
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState !== "visible" || !items.length) return;
+  await refreshDone(); if (done[items[i].id]) nextTodo(); else show(); });
+setInterval(refreshDone, 60000);
+function go(k) { i = Math.max(0, Math.min(items.length - 1, k)); show(); }
+function nextTodo() { const k = items.findIndex((x, j) => j > i && !done[x.id]); go(k >= 0 ? k : items.findIndex(x => !done[x.id])); }
+$("types").innerHTML = Object.entries(T).map(([k, [n, c, key, sh]]) => `<button data-k="${k}"><kbd>${key}</kbd><span class="sw" style="background:${c}"></span><span class="long">${n}</span><span class="short">${sh}</span></button>`).join("");
+$("noteBtn").onclick = () => { $("noteRow").classList.toggle("open"); if ($("noteRow").classList.contains("open")) $("note").focus(); };
+// phone: swipe left = skip, swipe right = back (not when the swipe starts on a button or the comment box)
+let touch = null;
+document.addEventListener("touchstart", e => { touch = e.target.closest("button,input") ? null : [e.touches[0].clientX, e.touches[0].clientY]; }, {passive: true});
+document.addEventListener("touchend", e => { if (!touch) return; const dx = e.changedTouches[0].clientX - touch[0], dy = e.changedTouches[0].clientY - touch[1];
+  if (Math.abs(dx) > 60 && Math.abs(dy) < 50) { if (dx < 0) nextTodo(); else go(i - 1); } touch = null; }, {passive: true});
+[...$("types").children].forEach(b => b.onclick = () => save(b.dataset.k));
+$("prev").onclick = () => go(i - 1); $("next").onclick = nextTodo; $("todo").onclick = nextTodo;
+$("zin").onclick = () => { zoom = Math.min(items[i].photo.max_zoom, zoom + 1); drawMap(items[i]); };
+$("zout").onclick = () => { zoom = Math.max(14, zoom - 1); drawMap(items[i]); };
+$("zin2").onclick = () => $("zin").click(); $("zout2").onclick = () => $("zout").click();
+$("g").onclick = () => { guessSeen = true; const g = items[i].guess; $("guess").textContent = "AI's best guess: " + (g ? T[g][0] : "none") + " (about 2 in 3 right)"; };
+$("note").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); const d = done[items[i].id];
+  if (d) save(d.type); else { $("saved").textContent = "Pick a type; the comment is saved with it."; } $("note").blur(); } if (e.key === "Escape") $("note").blur(); });
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase(), t = Object.entries(T).find(([, v]) => v[2] === k);
+  if (t) save(t[0]); else if (e.key === "ArrowRight") nextTodo(); else if (e.key === "ArrowLeft") go(i - 1);
+  else if (k === "z") $("zin").click(); else if (k === "x") $("zout").click(); else if (k === "g") $("g").click();
+  else if (k === "u") nextTodo(); else if (k === "n") { e.preventDefault(); $("note").focus(); } });
+Promise.all([fetch("api/items").then(r => r.json()), fetch("api/answers").then(r => r.json())]).then(([d, a]) => {
+  items = d.items; done = a; const k = items.findIndex(x => !done[x.id]); i = k >= 0 ? k : 0; show(); });
+</script></body></html>

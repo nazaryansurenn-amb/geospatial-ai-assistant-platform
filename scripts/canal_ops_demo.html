@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ջրաբաշխման պլանավորում</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+/* Demonstration front-end of the water delivery planner (owner 2026-11-03; designer, irrigation and PR review).
+   Fill colour = what grows (perennial plantings yellow, field crops green); blue = water, nothing else;
+   hatching = needs water, no turn this time. Interface controls use ink colours. The chat is fixed code. */
+:root{--ink-900:#0F1B24;--ink-700:#1F2D38;--ink-500:#5B6B76;--line:#E3E8EC;--surface:#FFFFFF;--surface-2:#F5F7F8;
+  --now:#1D6FE0;--wet:#38BDF8;--dry:#C7CED3;--done:#0E7C5A;--part:#F5A524;--nr:#E5484D;--per:#F2C94C;--fld:#3E9B5C}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--surface-2);color:var(--ink-700);
+  font:15px/1.5 "Noto Sans","Noto Sans Armenian",system-ui,"Segoe UI",sans-serif}
+button,input,textarea{font:inherit}
+.num{font-feature-settings:"tnum";font-variant-numeric:tabular-nums}
+#app{display:grid;grid-template-columns:minmax(0,1fr) 500px;grid-template-rows:64px minmax(0,1fr);height:100%}
+header{grid-column:1/3;background:var(--ink-900);color:#fff;display:flex;align-items:center;gap:16px;padding:0 20px}
+header .name{font-size:20px;font-weight:600;white-space:nowrap}
+header .sub{font-size:13px;color:#AEBBC4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+header .sp{flex:1}
+#chip{font-size:13px;color:#fff;border:1px solid #3A4A56;border-radius:20px;padding:5px 12px;white-space:nowrap}
+#lang{display:flex;gap:6px}
+#lang button{min-width:44px;min-height:40px;border:1px solid #3A4A56;background:none;color:#fff;border-radius:8px;cursor:pointer}
+#lang button.on{background:#fff;color:var(--ink-900)}
+#mapwrap{position:relative;min-height:0;display:flex;flex-direction:column}
+#map{flex:1;min-height:0}
+#legend{position:absolute;top:20px;left:20px;width:300px;background:rgba(255,255,255,.96);border-radius:12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);padding:12px 14px;font-size:13px;line-height:1.35;z-index:2}
+#legend h4{margin:0 0 6px;font-size:15px;color:var(--ink-900)}
+#legend .g{margin:8px 0 2px;font-weight:600;color:var(--ink-900);font-size:12px}
+#legend .r{display:flex;align-items:center;gap:8px;padding:2px 0}
+#legend .foot{margin-top:8px;font-size:11px;color:var(--ink-500)}
+.com{color:#fff;font:700 17px/1.1 system-ui,"Segoe UI",sans-serif;letter-spacing:.3px;pointer-events:none;white-space:nowrap;
+  text-shadow:0 0 3px #0F1B24,0 0 6px #0F1B24,0 1px 2px #0F1B24}
+.sw{flex:none;width:20px;height:13px;border-radius:3px}.ln{flex:none;width:24px;height:4px;border-radius:2px}
+.dt{flex:none;width:10px;height:10px;border-radius:50%;margin:0 7px}
+.hatch{background-image:repeating-linear-gradient(135deg,rgba(15,27,36,.85) 0 1.5px,transparent 1.5px 5px)}
+#legchip{display:none}
+#credit{position:absolute;right:10px;bottom:108px;z-index:2;font-size:10px;color:#fff;background:rgba(0,0,0,.45);padding:2px 6px;border-radius:4px}
+.maplibregl-ctrl-scale{border-color:var(--ink-900);color:var(--ink-900);background:rgba(255,255,255,.85);font-size:11px}
+.maplibregl-ctrl-bottom-left{bottom:96px}
+#timeline{flex:none;height:96px;background:#fff;border-top:1px solid var(--line);padding:12px 24px;display:flex;gap:16px;align-items:center}
+#play{flex:none;width:44px;height:44px;border-radius:50%;border:none;background:var(--ink-900);color:#fff;cursor:pointer;font-size:16px}
+#play:disabled{opacity:.35;cursor:default}
+#tl-main{flex:1;min-width:0}
+#tlabel{font-size:20px;font-weight:600;color:var(--ink-900);min-height:30px}#tlabel small{font-size:13px;font-weight:400;color:var(--ink-500);margin-left:8px}
+#hour{width:100%;margin:6px 0 0;height:28px;-webkit-appearance:none;appearance:none;background:transparent}
+#hour::-webkit-slider-runnable-track{height:10px;border-radius:5px;background:var(--track,#EEF1F4)}
+#hour::-moz-range-track{height:10px;border-radius:5px;background:var(--track,#EEF1F4)}
+#hour::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;margin-top:-5px;border-radius:50%;background:#fff;border:3px solid var(--now);cursor:pointer}
+#hour::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--now);cursor:pointer}
+#ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-500)}
+aside{background:var(--surface);border-left:1px solid var(--line);overflow-y:auto;padding:16px 18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.card h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--ink-500)}
+#chat{padding:0;overflow:hidden}
+#msgs{max-height:340px;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.bub{max-width:92%;padding:9px 12px;border-radius:12px;font-size:14px;line-height:1.45}
+.bub.me{align-self:flex-end;background:var(--ink-900);color:#fff;border-bottom-right-radius:4px}
+.bub.sys{align-self:flex-start;background:var(--surface-2);color:var(--ink-700);border-bottom-left-radius:4px}
+.bub .acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.bub .steps{list-style:none;padding:0;margin:0}.bub .steps li{padding:2px 0;color:var(--ink-500)}
+.bub .steps li.ok{color:var(--ink-700)}.bub .steps li.ok::before{content:"✓ ";color:var(--done);font-weight:700}
+.bub .steps li.run::before{content:"… ";color:var(--now);font-weight:700}.bub .steps li.wait::before{content:"· "}
+.typing{color:var(--ink-500);letter-spacing:2px}
+#ask{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:#fff}
+#q{flex:1;min-width:0;min-height:44px;max-height:120px;border:1px solid #C9D2D8;border-radius:10px;padding:10px 12px;resize:none;color:var(--ink-900)}
+#send{flex:none;min-width:48px;min-height:44px;border:none;border-radius:10px;background:var(--ink-900);color:#fff;cursor:pointer;font-weight:600}
+.btn{min-height:40px;border-radius:8px;padding:0 14px;cursor:pointer;font-weight:600}
+.btn.ink{background:var(--ink-900);color:#fff;border:none}.btn.line{background:#fff;color:var(--ink-900);border:1px solid #C9D2D8}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hero .big{font-size:44px;font-weight:700;color:var(--ink-900);line-height:1.1}
+.bar{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:10px 0 6px;background:var(--surface-2)}
+.bar i{display:block;height:100%}
+.cap{font-size:13px;color:var(--ink-500)}
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+.tile{background:var(--surface-2);border-radius:10px;padding:10px 12px}
+.tile b{display:block;font-size:22px;font-weight:600;color:var(--ink-900);line-height:1.2}
+.tile span{font-size:12px;color:var(--ink-500);line-height:1.3;display:block}
+.mini{display:flex;height:5px;border-radius:3px;overflow:hidden;margin-top:6px}.mini i{display:block}
+.crop{display:grid;grid-template-columns:20px 1fr auto;gap:8px;align-items:center;margin:8px 0 2px;font-size:14px;color:var(--ink-900)}
+.crop small{color:var(--ink-500);font-size:12px}
+.cbar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-left:28px}.cbar i{display:block;height:100%}
+.keys{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--ink-500)}.keys span{display:flex;align-items:center;gap:4px}
+.keys i{display:inline-block;width:10px;height:10px;border-radius:2px}
+.note{font-size:12px;color:var(--ink-500);margin-top:8px}
+.maplibregl-ctrl-attrib{display:none}
+@media (max-width:900px){
+  #app{grid-template-columns:minmax(0,1fr);grid-template-rows:56px auto auto}
+  header{grid-column:1;padding:0 12px;gap:10px}header .sub,#chip{display:none}
+  header .name{font-size:16px;white-space:normal;line-height:1.2}
+  #map{height:52vh;flex:none}
+  #legend{display:none;top:56px;left:12px;width:calc(100% - 24px);max-height:44vh;overflow-y:auto}#legend.open{display:block}
+  #legchip{display:block;position:absolute;top:12px;left:12px;z-index:3;min-height:40px;padding:0 14px;border-radius:20px;
+    border:none;background:rgba(255,255,255,.96);color:var(--ink-900);font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+  #credit{bottom:auto;top:calc(52vh - 22px);font-size:9px}
+  .maplibregl-ctrl-bottom-left{bottom:auto;top:calc(52vh - 40px)}
+  #timeline{height:auto;padding:10px 12px}#tlabel{font-size:16px}
+  aside{border-left:none;padding:12px}
+  .tiles{gap:6px}.tile b{font-size:17px}.tile span{font-size:11px}
+  .hero .big{font-size:34px}#msgs{max-height:55vh}
+}
+/* vertical (9:16) video, switched on by the recorder with <body class="v916"> in a 1080x1920 window: the phone layout
+   at 540x960 drawn twice as large (map at double pixel ratio), with a two-column legend under the timeline and the
+   chat filling the rest of the screen, nothing to scroll (owner 2026-11-03) */
+body.v916{overflow:hidden}
+body.v916 #app{width:540px;height:960px;transform:scale(2);transform-origin:0 0;overflow:hidden;
+  grid-template-columns:minmax(0,1fr);grid-template-rows:56px auto minmax(0,1fr)}
+body.v916 header{grid-column:1;padding:0 12px;gap:10px}body.v916 header .sub,body.v916 #chip{display:none}
+body.v916 header .name{font-size:16px;white-space:normal;line-height:1.2}
+body.v916 #map{height:432px;flex:none;order:0}body.v916 #timeline{order:1;height:auto;padding:10px 12px}
+body.v916 #tlabel{font-size:16px}
+body.v916 #legend{order:2;display:block;position:static;width:auto;max-height:none;margin:0;border-radius:0;box-shadow:none;
+  border-top:1px solid var(--line);padding:6px 12px 8px;font-size:11px;column-count:2;column-gap:14px}
+body.v916 #legend .g{font-size:11px;margin:4px 0 1px;break-after:avoid}body.v916 #legend .r{break-inside:avoid;padding:1px 0}
+body.v916 #legchip,body.v916 #results{display:none}
+body.v916 #credit{bottom:auto;top:410px;font-size:9px}body.v916 .maplibregl-ctrl-bottom-left{bottom:auto;top:392px}
+body.v916 aside{border-left:none;padding:8px 12px;overflow:hidden;display:flex;flex-direction:column}
+body.v916 #chat{flex:1;min-height:0;display:flex;flex-direction:column;margin:0}
+body.v916 #msgs{flex:1;min-height:0;max-height:none}
+body.v916 .com{font-size:13px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header><div class="name" data-t="name"></div><div class="sub" data-t="sub"></div><span class="sp"></span>
+    <span id="chip"></span><span id="lang"><button data-l="hy">ՀԱՅ</button><button data-l="en">EN</button></span></header>
+  <div id="mapwrap">
+    <div id="map"></div>
+    <button id="legchip" data-t="legend"></button>
+    <div id="legend"></div>
+    <div id="credit"></div>
+    <div id="timeline"><button id="play" aria-label="play">▶</button>
+      <div id="tl-main"><div id="tlabel"></div><input type="range" id="hour" min="0" max="48" step="0.25" value="0"><div id="ticks"></div></div></div>
+  </div>
+  <aside id="side"><div class="card" id="chat"><div id="msgs"></div>
+    <form id="ask"><textarea id="q" rows="2"></textarea><button id="send" aria-label="send">➤</button></form></div><div id="results"></div></aside>
+</div>
+<script>
+const TX = {
+  hy: {name: "Ջրաբաշխման պլանավորում", sub: "Մոդելավորում · Ստորին Հրազդանի դիտարկվող գոտի, I և II փուլեր",
+    legend: "Լեգենդ", on_map: "Քարտեզում", g_grow: "Մշակաբույսի տեսակը", g_water: "Ոռոգման ջրամատակարարման պլանավորում", g_canals: "Ջրանցքներ", g_outlets: "Ջրթողներ", g_bound: "Սահման",
+    per: "Բազմամյա տնկարկներ", fld: "Դաշտային մշակաբույսեր", crop_note: "Մշակաբույսերի խումբը՝ արբանյակային պատկերների մեկնաբանությամբ",
+    w_now: "Այժմ ջրվող հողատարածքներ", w_turn: "Ներկայումս ոռոգվելիք", w_nr: "Ջրի կարիք ունեցող, սակայն ջուր չստացող", w_x: "Ներկայումս ոռոգման ջրի կարիք չունեցող",
+    c_wet: "Ջրանցքում առկա է ջուր", c_dry: "Ջրանցքը դատարկ է", com_b: "Համայնքի սահման",
+    o_now: "Ջուրն այժմ հոսում է", o_later: "Ջրման պահը՝ ավելի ուշ", o_done: "Ջրման պահն ավարտված է", o_part: "Մասնակի ոռոգված", o_nr: "Այս անգամ չոռոգված",
+    zone: "Ստորին Հրազդանի դիտարկվող գոտի",
+    sim: "Մոդելավորում՝ իրական մայր ջրանցքի երկայնքով սինթետիկ ցանցի վրա։ Ջրթողները բացում են մարդիկ։",
+    day: "Օր",
+    understood: "Հասկացա․ ջրանցքի գլխամասում՝ {q} մ³/վ, {h} ժամ, {start}-ից մինչև {end} (ընդամենը {v} մ³)։ Պլանը կկազմեմ ջրի կարիք ունեցող հողերի առաջնահերթությամբ՝ ջուր տալով միայն անհրաժեշտ ջրանցքներով, որ կորուստները փոքր լինեն։ Հաստատե՞լ։",
+    confirm: "Հաստատել", change: "Փոխել", me_confirm: "Հաստատում եմ։", me_change: "Փոխեմ։", again: "Լավ, գրեք նոր պայմանները։",
+    s1: "Հողամասերի արբանյակային վիճակը՝ {d}-ի դրությամբ", s2: "Եղանակը և կանխատեսումը, որոնք հայտնի էին այդ օրը",
+    s3: "Ջրթողների ընտրություն՝ ըստ առաջնահերթության", s4: "Փականների ժամերը և ջրի ընթացքը ջրանցքներով",
+    ready: "Պլանը պատրաստ է։ Ջրի կարիք ունի {due} հա, ոռոգման հերթ է ստանում {turn} հա (կարիքի {pct})։ Բազմամյա տնկարկներ՝ {pt} հա {pd}-ից, դաշտային մշակաբույսեր՝ {ft} հա {fd}-ից։ Դաշտերի մուտքին հասնում է {del} մ³ ({eff})։ Ցույց եմ տալիս ժամ առ ժամ ընթացքը։",
+    err: "Չհասկացա։ Գրեք օրը, ժամկետը և հոսքը, օրինակ՝ «օգոստոսի 1-ից 48 ժամ 5 մ³/վ»։",
+    covered: "Կարիքի բավարարված մասը", of_need: "{b} հա ջրի կարիք ունեցող հողից {a} հա-ին ոռոգման հերթը հասնում է այդ {h} ժամում",
+    last: "Ջուրը վերջին ջրթողին հասնում է", hours: "ժ",
+    released: "Գլխամասից բաց թողնված ջուր", by_crop: "Ըստ մշակաբույսերի խմբի", active: "ջրովի հող այս սեզոնում",
+    need_turn: "ոռոգվող հողատարածքներ՝ {t} հա {d} հա կարիք ունեցողից", acct: "Ջրի հաշվեկշիռ",
+    acct_line: "{h} մ³ գլխամասում → {d} մ³ դաշտերի մուտքին ({p})", k_del: "դաշտերին", k_seep: "ֆիլտրացիա", k_fill: "ջրանցքների լցում և դատարկում", k_esc: "պոչային ջրթափ",
+    report: "Հաշվետվություն", sheets: "Ջրբաշխի թերթիկներ", ha: "հա", m3: "մ³"},
+  en: {name: "Water Delivery Planning", sub: "Simulation study · Lower Hrazdan observed zone, stages I and II",
+    legend: "Legend", on_map: "On the map", g_grow: "What grows", g_water: "Water in this plan", g_canals: "Canals", g_outlets: "Outlets", g_bound: "Boundary",
+    per: "Perennial plantings", fld: "Field crops", crop_note: "Crop group interpreted from satellite images",
+    w_now: "Land being watered now", w_turn: "Has a turn in this plan", w_nr: "Needs water, no turn this time", w_x: "No water need in this window",
+    c_wet: "Canal carrying water now", c_dry: "Canal empty now", com_b: "Community boundary",
+    o_now: "Water flowing now", o_later: "Turn later", o_done: "Turn finished", o_part: "Part of the turn", o_nr: "No turn this time",
+    zone: "Lower Hrazdan observed zone",
+    sim: "Simulation on a synthetic canal network along the real main canal. People open the gates.",
+    day: "Day",
+    understood: "Understood: {q} m³/s at the canal head for {h} hours, from {start} to {end} ({v} m³ in total). I will plan by the priority of the land that needs water, opening only the canals that are needed to keep losses low. Confirm?",
+    confirm: "Confirm", change: "Change", me_confirm: "Confirmed.", me_change: "Let me change it.", again: "Fine, type the new conditions.",
+    s1: "Satellite state of the parcels as of {d}", s2: "Weather and forecast known on that day",
+    s3: "Choosing outlets by priority", s4: "Gate times and the water's travel along the canals",
+    ready: "The plan is ready. {due} ha need water; {turn} ha get a turn ({pct} of the need). Perennial plantings: {pt} of {pd} ha; field crops: {ft} of {fd} ha. {del} m³ reach the field inlets ({eff}). Showing the plan hour by hour.",
+    err: "I did not understand. Type the day, the window and the flow, e.g. «from 1 August, 48 hours, 5 m³/s».",
+    covered: "Share of the need covered", of_need: "{a} of {b} ha needing water get a turn in these {h} hours",
+    last: "Water reaches the last outlet after", hours: "h",
+    released: "Released at the canal head", by_crop: "By crop group", active: "irrigated land this season",
+    need_turn: "a turn for {t} of {d} ha needing water", acct: "Water account",
+    acct_line: "{h} m³ at the head → {d} m³ at the field inlets ({p})", k_del: "to the fields", k_seep: "seepage", k_fill: "filling and draining canals", k_esc: "spill at canal tails",
+    report: "Report", sheets: "Sheets for the ditch riders", ha: "ha", m3: "m³"}
+};
+const MONTHS_HY = ["հունվարի", "փետրվարի", "մարտի", "ապրիլի", "մայիսի", "հունիսի", "հուլիսի", "օգոստոսի", "սեպտեմբերի", "հոկտեմբերի", "նոյեմբերի", "դեկտեմբերի"];
+const MONTHS_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const C = {now: "#1D6FE0", wet: "#38BDF8", dry: "#C7CED3", done: "#0E7C5A", part: "#F5A524", nr: "#E5484D", ink: "#0F1B24", per: "#F2C94C", fld: "#3E9B5C"};
+const YEAR = 2025;                                         // the demonstration season
+let L = (() => { try { return localStorage.getItem("demoLang") || "hy"; } catch (e) { return "hy"; } })();
+let ST = null, ML = null, MAP = null, P = null, HOUR = 0, PLAYING = null, BUSY = false, MSGS = [], ACTS = {};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const t = k => TX[L][k] ?? TX.en[k] ?? k;
+const fill = (s, o) => s.replace(/\{(\w+)\}/g, (_, k) => o[k] ?? "");
+const post = (u, b) => fetch(u, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(b)}).then(r => r.json().then(j => ({ok: r.ok, j})));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function num(v, d = 0){
+  if (v == null || isNaN(v)) return "–";
+  const s = Number(v).toFixed(d), [i, f] = s.split("."), g = i.replace(/\B(?=(\d{3})+(?!\d))/g, L === "hy" ? " " : ",");
+  return f ? g + (L === "hy" ? "," : ".") + f : g;
+}
+const pct = (v, d = 1) => L === "hy" ? num(v, d) + " %" : num(v, d) + "%";
+const ts = s => new Date(String(s).replace(" ", "T"));
+function when(d){
+  const hh = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  return L === "hy" ? `${d.getFullYear()} թ. ${MONTHS_HY[d.getMonth()]} ${d.getDate()}, ${hh}` : `${d.getDate()} ${MONTHS_EN[d.getMonth()]} ${d.getFullYear()}, ${hh}`;
+}
+const dayName = d => L === "hy" ? `${MONTHS_HY[d.getMonth()]} ${d.getDate()}` : `${d.getDate()} ${MONTHS_EN[d.getMonth()]}`;
+function shortWhen(d){
+  const hh = String(d.getHours()).padStart(2, "0") + ":00";
+  return L === "hy" ? `${MONTHS_HY[d.getMonth()]} ${d.getDate()}, ${hh}` : `${d.getDate()} ${MONTHS_EN[d.getMonth()].slice(0, 3)} ${hh}`;
+}
+
+// ---------------------------------------------------------------- map
+const W = (a, b, c) => ["interpolate", ["linear"], ["zoom"], 9, a * 0.35, 11, a, 14, b, 17, c];   // thin when zoomed out
+function hatchImage(px = 16){
+  const c = document.createElement("canvas"); c.width = c.height = px; const g = c.getContext("2d");
+  g.strokeStyle = "rgba(15,27,36,0.85)"; g.lineWidth = 1.6;
+  for (let k = -px; k < 2 * px; k += 6) { g.beginPath(); g.moveTo(k, px); g.lineTo(k + px, 0); g.stroke(); }
+  return g.getImageData(0, 0, px, px);
+}
+let fit = () => {};
+async function initMap(){
+  ML = await (await fetch("/map/layers.json")).json();
+  const b = ML.basemap;
+  $("#credit").textContent = b.attribution.replace(/<[^>]+>/g, "");
+  // the address bar keeps the current view (#view=zoom/lat/lng): the owner frames a shot and sends the address
+  MAP = new maplibregl.Map({container: "map", center: [44.3, 40.13], zoom: 10.6, maxZoom: 16.5, attributionControl: false, hash: "view",
+    style: {version: 8, sources: {sat: {type: "raster", tiles: b.tiles, tileSize: b.tile_size, maxzoom: b.max_zoom}},
+      layers: [{id: "sat", type: "raster", source: "sat", paint: {"raster-saturation": -0.3, "raster-brightness-max": 0.9}}]}});
+  MAP.addControl(new maplibregl.NavigationControl({showCompass: false}), "top-right");
+  MAP.addControl(new maplibregl.ScaleControl({maxWidth: 120, unit: "metric"}), "bottom-left");
+  await new Promise(ok => MAP.once("style.load", ok));
+  MAP.addImage("hatch", hatchImage(), {pixelRatio: 2});
+  const net = await (await fetch("/map/network.geojson.gz")).json();
+  const main = await (await fetch("/map/canal.geojson")).json();
+  const zone = await (await fetch("/map/observed_zone.geojson")).json();
+  MAP.addSource("net", {type: "geojson", data: net, promoteId: "node"});
+  MAP.addSource("main", {type: "geojson", data: main});
+  MAP.addSource("zone", {type: "geojson", data: zone});
+  // one parcel layer (crop groups); a plan only sets each parcel's state (s, a, b), so the outlines load once
+  MAP.addSource("crops", {type: "geojson", data: "/api/planner/crops"});
+  const crop = ["match", ["get", "c"], "P", C.per, C.fld], S_ = ["feature-state", "s"];
+  MAP.addLayer({id: "crops", type: "fill", source: "crops", paint: {"fill-color": crop, "fill-opacity": 0.75}});
+  MAP.addLayer({id: "crops_hatch", type: "fill", source: "crops", paint: {"fill-pattern": "hatch",
+    "fill-opacity": ["case", ["==", S_, "n"], 0.9, 0]}});
+  const V_ = ["coalesce", ["feature-state", "v"], 0];
+  MAP.addLayer({id: "crops_now", type: "fill", source: "crops", paint: {"fill-color": C.now, "fill-opacity": V_}});
+  MAP.addLayer({id: "crops_line", type: "line", source: "crops", paint: {"line-color": C.now,
+    "line-opacity": ["min", 1, ["*", 2, V_]],
+    "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0, 12.5, 0.8, 14, 1.6, 16, 2.4]}});
+  // community boundaries and names (owner 2026-11-03); names as page text, since the map style carries no fonts
+  const com = await (await fetch("/api/planner/communities")).json();
+  MAP.addSource("com", {type: "geojson", data: com.areas});
+  MAP.addLayer({id: "com_halo", type: "line", source: "com", paint: {"line-color": "#0F1B24", "line-opacity": 0.55, "line-width": 5}});
+  MAP.addLayer({id: "com", type: "line", source: "com", paint: {"line-color": "#FFFFFF", "line-opacity": 0.95, "line-width": 2}});
+  COM = com.labels.features.map(f => ({f, m: new maplibregl.Marker({element: Object.assign(document.createElement("div"), {className: "com"})})
+    .setLngLat(f.geometry.coordinates).addTo(MAP)}));
+  const comShow = () => COM.forEach(x => x.m.getElement().style.display = MAP.getZoom() >= 10.8 ? "" : "none");
+  MAP.on("zoom", comShow); comShow(); comNames();
+  MAP.addLayer({id: "zone_halo", type: "line", source: "zone", paint: {"line-color": "rgba(15,27,36,.55)", "line-width": 5}});
+  MAP.addLayer({id: "zone", type: "line", source: "zone", paint: {"line-color": "#FFFFFF", "line-width": 2.5, "line-dasharray": [3, 2]}});
+  const canal = (id, kind, w, src = "net", minzoom = 0) => {
+    const base = {source: src, minzoom, layout: {"line-cap": "round", "line-join": "round"}};
+    if (kind) base.filter = ["==", ["get", "kind"], kind];
+    MAP.addLayer({id: id + "_case", type: "line", ...base, paint: {"line-color": "#0B2540", "line-width": W(w[0] + 2, w[1] + 2, w[2] + 2),
+      "line-opacity": src === "net" ? ["case", WET_, 0.9, 0.18] : 0.6}});
+    MAP.addLayer({id, type: "line", ...base, paint: {"line-color": src === "net" ? ["case", WET_, C.wet, C.dry] : C.dry,
+      "line-opacity": src === "net" ? ["case", WET_, 1, 0.45] : 0.6, "line-width": W(...w)}});
+  };
+  canal("ter", "tertiary_canal", [1.5, 2.5, 3.5], "net", 11.8);                            // field canals from a closer zoom
+  canal("sec", "secondary_canal", [3, 4.5, 6]);
+  canal("main", null, [6, 8, 11], "main");
+  const flow = (id, src, w, kind, minzoom = 0) => MAP.addLayer({id, type: "line", source: src, minzoom,
+    ...(kind ? {filter: ["==", ["get", "kind"], kind]} : {}), layout: {"line-cap": "butt", "line-join": "round"},
+    paint: {"line-color": "#CDEFFF", "line-width": W(...w), "line-opacity": kind ? ["case", WET_, 0.75, 0] : 0,
+      "line-dasharray": DASH[0]}});
+  flow("ter_flow", "net", [0.5, 0.8, 1.1], "tertiary_canal", 11.8);
+  flow("sec_flow", "net", [0.8, 1.2, 1.6], "secondary_canal");
+  flow("main_flow", "main", [1.4, 2, 2.8]);
+  MAP.addLayer({id: "struct", type: "circle", source: "net", minzoom: 13, filter: ["in", ["get", "kind"], ["literal", ["main_gate", "main_pump"]]],
+    paint: {"circle-radius": 4, "circle-color": "#FFFFFF", "circle-stroke-color": C.ink, "circle-stroke-width": 1.5}});
+  const outF = ["in", ["get", "kind"], ["literal", ["tertiary_gate", "direct_outlet"]]];
+  const O_ = ["coalesce", ["feature-state", "o"], ""], none = "rgba(0,0,0,0)";
+  MAP.addLayer({id: "out_halo", type: "circle", source: "net", minzoom: 13.6, filter: outF, paint: {"circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 6.5, 15, 10],
+    "circle-color": C.wet, "circle-opacity": ["case", ["==", O_, "now"], 0.35, 0]}});
+  MAP.addLayer({id: "out", type: "circle", source: "net", minzoom: 13.6, filter: outF, paint: {"circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 2.5, 15, 6],
+    "circle-color": ["match", O_, "now", C.now, "later", "#FFFFFF", "done", C.done, "part", C.part, "nr", C.nr, none],
+    "circle-stroke-color": ["match", O_, "later", C.now, "", none, "#FFFFFF"],
+    "circle-stroke-width": ["match", O_, ["later", "nr"], 2, 1.2]}});
+  const bb = new maplibregl.LngLatBounds();
+  zone.features.forEach(f => (f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates).forEach(p => p[0].forEach(c => bb.extend(c))));
+  fit = () => MAP.fitBounds(bb, {padding: innerWidth > 900 ? {top: 30, left: 340, right: 40, bottom: 30} : 16, duration: 0});
+  if (!/view=/.test(location.hash)) fit();
+  paint();
+}
+
+function state(){
+  const T = ts(P.window.start).getTime() + HOUR * 3600e3, out = {}, wet = {};
+  P.outlets.forEach(o => {
+    const a = o.o ? ts(o.o).getTime() : null, b = o.c ? ts(o.c).getTime() : null;
+    out[o.n] = o.d <= 0 ? "nr" : (T >= a && T < b) ? "now" : T >= b ? (o.s === "served" ? "done" : "part") : "later";
+  });
+  Object.entries(P.canals).forEach(([k, v]) => { wet[k] = ts(v.from).getTime() <= T && T < ts(v.to).getTime(); });
+  const mainWet = P.offtakes.some(o => ts(o.open).getTime() <= T && T < ts(o.close).getTime());
+  return {T, out, wet, mainWet};
+}
+// Time steps change only per-feature state (canals w, outlets o, parcels v): the map repaints at once, with no
+// re-layout of the canal or parcel layers, so the colours keep pace with the clock during playback.
+let NET = {}, MAIN_WET = null, FIELDS = null, FIELD_V = null;
+function clearPlanState(){
+  if (MAP && MAP.getSource("net")) MAP.removeFeatureState({source: "net"});
+  if (MAP && MAP.getSource("crops")) MAP.removeFeatureState({source: "crops"});
+  NET = {}; MAIN_WET = null; FIELDS = null; FIELD_V = null;
+}
+function paint(){
+  if (!MAP || !MAP.getLayer("out")) return;
+  const vis = P ? "visible" : "none";
+  ["out", "out_halo"].forEach(id => MAP.setLayoutProperty(id, "visibility", vis));
+  const s = P ? state() : {wet: {}, out: {}, mainWet: false};
+  const net = {};
+  Object.keys(s.wet).forEach(n => { net[n] = {w: s.wet[n]}; });
+  Object.entries(s.out).forEach(([n, k]) => { net[n] = {...(net[n] || {}), o: k}; });
+  Object.keys(NET).forEach(n => { if (!net[n]) net[n] = {w: false, o: ""}; });
+  Object.entries(net).forEach(([n, v]) => {
+    const old = NET[n] || {};
+    if (old.w !== v.w || old.o !== v.o) MAP.setFeatureState({source: "net", id: n}, v);
+  });
+  NET = net;
+  if (MAIN_WET !== s.mainWet) {
+    MAIN_WET = s.mainWet;
+    MAP.setPaintProperty("main", "line-color", s.mainWet ? C.wet : C.dry);
+    MAP.setPaintProperty("main", "line-opacity", s.mainWet ? 1 : 0.6);
+    MAP.setPaintProperty("main_case", "line-opacity", s.mainWet ? 0.9 : 0.6);
+    MAP.setPaintProperty("main_flow", "line-opacity", s.mainWet ? 0.75 : 0);
+  }
+  if (!FIELDS) return;
+  // a field fades into blue as its outlet's turn starts and back to its crop colour within an hour after it ends
+  const h = HOUR;
+  for (let i = 0; i < FIELDS.k.length; i++) {
+    const A = FIELDS.a[i], B = FIELDS.b[i];
+    let v = 0;
+    if (A !== null && h >= A && h < B) v = 0.95 * Math.min(1, (h - A) / 0.75);
+    else if (B !== null && h >= B && h < B + 1) v = 0.6 * (1 - (h - B));
+    v = Math.round(v * 20) / 20;
+    if (v !== FIELD_V[i]) { FIELD_V[i] = v; MAP.setFeatureState({source: "crops", id: FIELDS.k[i]}, {v}); }
+  }
+}
+const WET_ = ["boolean", ["feature-state", "w"], false];
+// water moving along wet canals: light dashes stepping downstream (the canal lines run downstream)
+const DASH = [[0, 4, 3], [0.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5], [2, 4, 1], [2.5, 4, 0.5], [3, 4, 0],
+              [0, 0.5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, 0.5]];
+let DASH_I = 0, DASH_T = 0;
+function flowTick(ts_){
+  if (MAP && MAP.getLayer("sec_flow") && P && ts_ - DASH_T > 55) {
+    DASH_T = ts_; DASH_I = (DASH_I + 1) % DASH.length;
+    ["ter_flow", "sec_flow", "main_flow"].forEach(id => MAP.setPaintProperty(id, "line-dasharray", DASH[DASH_I]));
+  }
+  requestAnimationFrame(flowTick);
+}
+requestAnimationFrame(flowTick);
+
+// ---------------------------------------------------------------- timeline
+function hours(){ return P ? Math.ceil((ts(P.window.last) - ts(P.window.start)) / 3600e3) : 48; }
+function timeline(){
+  const H = hours(), r = $("#hour");
+  r.max = H; r.value = HOUR; r.disabled = !P; $("#play").disabled = !P;
+  if (!P) { $("#tlabel").textContent = ""; $("#ticks").innerHTML = ""; r.style.setProperty("--track", "#EEF1F4"); return; }
+  const s0 = ts(P.window.start), T = new Date(s0.getTime() + HOUR * 3600e3);
+  const dayN = Math.round((new Date(T.getFullYear(), T.getMonth(), T.getDate()) - new Date(s0.getFullYear(), s0.getMonth(), s0.getDate())) / 864e5) + 1;
+  const hm = `${String(T.getHours()).padStart(2, "0")}:${String(T.getMinutes()).padStart(2, "0")}`;
+  $("#tlabel").innerHTML = `${esc(t("day"))} ${dayN} · ${hm}<small>${esc(when(T))}</small>`;
+  const stops = [];
+  for (let h = 0; h < H; h++) { const x = new Date(s0.getTime() + h * 3600e3).getHours(), night = x >= 19 || x < 7;
+    stops.push(`${night ? "#DCE2E7" : "#F3F6F8"} ${100 * h / H}% ${100 * (h + 1) / H}%`); }
+  r.style.setProperty("--track", `linear-gradient(90deg, ${stops.join(",")})`);
+  const ticks = [], wide = innerWidth > 900 && !document.body.classList.contains("v916");
+  for (let h = 0; h <= H; h += wide ? 12 : 24) ticks.push(`<span>${esc(wide ? shortWhen(new Date(s0.getTime() + h * 3600e3)) : `${t("day")} ${h / 24 + 1}`)}</span>`);
+  $("#ticks").innerHTML = ticks.join("");
+}
+function stop(){ if (PLAYING) { clearInterval(PLAYING); PLAYING = null; } $("#play").textContent = "▶"; }
+function play(stepMs = 300){                              // stepMs per hour, moved in quarter hours for smooth motion
+  if (!P) return;
+  stop();
+  if (HOUR >= hours()) HOUR = 0;
+  $("#play").textContent = "❚❚";
+  PLAYING = setInterval(() => { HOUR = Math.min(hours(), HOUR + 0.25); if (HOUR >= hours()) stop(); timeline(); paint(); }, stepMs / 4);
+}
+$("#hour").oninput = e => { stop(); HOUR = +e.target.value; timeline(); paint(); };
+$("#play").onclick = () => PLAYING ? stop() : play();
+
+// ---------------------------------------------------------------- legend
+function legend(){
+  const r = (sw, k) => `<div class="r">${sw}<span>${esc(t(k))}</span></div>`;
+  const box = bg => `<span class="sw" style="background:${bg}"></span>`;
+  const ln = c => `<span class="ln" style="background:${c};box-shadow:0 0 0 1.5px #0B2540"></span>`;
+  const dot = (f, s, w = 1.2) => `<span class="dt" style="background:${f};box-shadow:0 0 0 ${w}px ${s}"></span>`;
+  const both = `linear-gradient(90deg,${C.per} 50%,${C.fld} 50%)`;
+  // owner 2026-11-03: the legend shows only these three groups, in the owner's wording
+  $("#legend").innerHTML = `<div class="g" style="margin-top:0">${esc(t("g_grow"))}</div>` + r(box(C.per), "per") + r(box(C.fld), "fld")
+    + `<div class="g">${esc(t("g_water"))}</div>` + r(box(C.now), "w_now")
+    + r(`<span class="sw" style="background:${both};box-shadow:inset 0 0 0 2px ${C.now}"></span>`, "w_turn")
+    + r(`<span class="sw hatch" style="background-color:rgba(242,201,76,.45)"></span>`, "w_nr")
+    + r(`<span class="sw" style="background:${both};opacity:.3"></span>`, "w_x")
+    + `<div class="g">${esc(t("g_canals"))}</div>` + r(ln(C.wet), "c_wet") + r(ln(C.dry), "c_dry")
+    + `<div class="g">${esc(t("g_bound"))}</div>` + r(`<span class="ln" style="background:#fff;height:3px;box-shadow:0 0 0 1.5px #0F1B24"></span>`, "com_b");
+}
+let COM = [];
+function comNames(){ COM.forEach(x => x.m.getElement().textContent = x.f.properties[L] || x.f.properties.hy); }
+
+// ---------------------------------------------------------------- chat (fixed code: reads the sentence, asks to confirm)
+function bubble(who, html){ MSGS.push({who, html}); drawMsgs(); return MSGS.length - 1; }
+function setBubble(i, html){ MSGS[i].html = html; drawMsgs(); }
+function drawMsgs(){
+  const m = $("#msgs");
+  m.innerHTML = MSGS.map((x, i) => `<div class="bub ${x.who}">${x.html}</div>`).join("");
+  m.scrollTop = m.scrollHeight;
+  m.querySelectorAll("[data-act]").forEach(b => b.onclick = () => ACTS[b.dataset.act] && ACTS[b.dataset.act]());
+}
+async function sysSay(html){ const i = bubble("sys", `<span class="typing">• • •</span>`); await sleep(700); setBubble(i, html); return i; }
+async function onAsk(text){
+  if (BUSY || !text.trim()) return;
+  BUSY = true; stop(); ACTS = {}; bubble("me", esc(text));
+  const {ok, j} = await post("/api/planner/parse", {text, lang: L, year: YEAR});
+  if (!ok) { await sysSay(esc(t("err"))); BUSY = false; return; }
+  const q = j.m3s.map(x => num(x, x % 1 ? 1 : 0)).join(" / ");
+  const body = esc(fill(t("understood"), {q, h: num(j.hours), start: when(ts(j.start)), end: when(ts(j.end)), v: num(j.head_m3)}))
+    + (j.notes || []).map(n => `<div class="cap">${esc(n)}</div>`).join("");
+  const ci = await sysSay(body + `<div class="acts"><button class="btn ink" data-act="yes">${esc(t("confirm"))}</button><button class="btn line" data-act="no">${esc(t("change"))}</button></div>`);
+  BUSY = false;
+  ACTS = {
+    no: async () => { ACTS = {}; setBubble(ci, body); bubble("me", esc(t("me_change"))); await sysSay(esc(t("again"))); $("#q").focus(); },
+    yes: async () => { ACTS = {}; setBubble(ci, body); bubble("me", esc(t("me_confirm"))); await run(j); }
+  };
+}
+// the plan recolours the parcels already on the map: a small status list, no second download of outlines
+async function applyStates(planId){
+  const st = await (await fetch("/api/planner/states?plan=" + planId)).json();
+  clearPlanState();
+  for (let i = 0; i < st.k.length; i++) MAP.setFeatureState({source: "crops", id: st.k[i]}, {s: st.s[i]});
+  FIELDS = st; FIELD_V = new Float32Array(st.k.length);
+  MAP.setPaintProperty("crops", "fill-opacity",
+    ["match", ["coalesce", ["feature-state", "s"], "o"], "x", 0.6, "n", 0.55, "w", 0.85, "p", 0.85, 0.15]);
+}
+async function run(card){
+  BUSY = true;
+  const d = ts(card.planning + " 07:00");
+  const steps = [fill(t("s1"), {d: dayName(d)}), t("s2"), t("s3"), t("s4")];
+  const draw = k => `<ul class="steps">${steps.map((s, i) => `<li class="${i < k ? "ok" : i === k ? "run" : "wait"}">${esc(s)}</li>`).join("")}</ul>`;
+  const si = await sysSay(draw(0));
+  let k = 0;
+  const tick = setInterval(() => { if (k < steps.length - 1) { k++; setBubble(si, draw(k)); } }, 2600);
+  let r = await post("/api/planner/confirm", {supply_id: card.supply_id, token: card.token});
+  if (r.ok) r = await post("/api/planner/run", {supply_id: card.supply_id});
+  clearInterval(tick);
+  if (!r.ok) { setBubble(si, esc(r.j.error || "error")); BUSY = false; return; }
+  for (; k < steps.length; k++) { setBubble(si, draw(k + 1)); await sleep(350); }
+  P = r.j; HOUR = 0;
+  await applyStates(P.plan_id);
+  render();                                                // the map keeps the view the user chose
+  const s = P.summary, c = P.crops, a = P.account;
+  await sysSay(esc(fill(t("ready"), {due: num(s.due_ha), turn: num(s.ha_with_a_turn), pct: pct(s.need_met_pct),
+    pt: num(c.perennial.turn_ha), pd: num(c.perennial.due_ha), ft: num(c.field.turn_ha), fd: num(c.field.due_ha),
+    del: num(a.delivered_field_inlets_m3), eff: pct(100 * a.delivered_field_inlets_m3 / a.released_head_m3, 0)})));
+  BUSY = false;
+  await sleep(600);
+  play(300);
+}
+$("#ask").onsubmit = e => { e.preventDefault(); const v = $("#q").value; $("#q").value = ""; onAsk(v); };
+$("#q").onkeydown = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#ask").requestSubmit(); } };
+
+// ---------------------------------------------------------------- results
+function results(){
+  const box = $("#results");
+  if (!P) { box.innerHTML = ""; return; }
+  const s = P.summary, c = P.crops, a = P.account;
+  const turn = s.ha_with_a_turn, due = s.due_ha, miss = Math.max(due - turn, 0);
+  let h = `<div class="card hero"><h3>${esc(t("covered"))}</h3><div class="big num">${esc(pct(s.need_met_pct))}</div>
+    <div class="bar"><i style="width:${100 * turn / due}%;background:${C.now}"></i><i style="width:${100 * miss / due}%;background:repeating-linear-gradient(135deg,#5B6B76 0 2px,#E3E8EC 2px 6px)"></i></div>
+    <div class="cap">${esc(fill(t("of_need"), {a: num(turn), b: num(due), h: num(P.supply.hours)}))}</div></div>`;
+  h += `<div class="tiles"><div class="tile"><b class="num">${num(s.last_arrival_h)} ${esc(t("hours"))}</b><span>${esc(t("last"))}</span></div>
+    <div class="tile"><b class="num">${num(P.supply.head_m3)}</b><span>${esc(t("released"))}, ${esc(t("m3"))}</span></div></div>`;
+  const row = (key, col, name) => { const x = c[key], share = x.due_ha ? 100 * x.turn_ha / x.due_ha : 0;
+    return `<div class="crop"><span class="sw" style="background:${col}"></span><span>${esc(t(name))} <small>· ${num(x.active_ha)} ${esc(t("ha"))} ${esc(t("active"))}</small></span>
+      <b class="num">${esc(pct(share, 0))}</b></div>
+      <div class="cbar"><i style="width:${share}%;background:${C.now}"></i></div>
+      <div class="cap" style="margin-left:28px">${esc(fill(t("need_turn"), {t: num(x.turn_ha), d: num(x.due_ha)}))}</div>`; };
+  h += `<div class="card"><h3>${esc(t("by_crop"))}</h3>${row("perennial", C.per, "per")}${row("field", C.fld, "fld")}
+    <div class="note">${esc(t("crop_note"))}</div></div>`;
+  const rel = a.released_head_m3, seg = [[a.delivered_field_inlets_m3, C.now, "k_del"],
+    [(a.main_canal_seepage_m3 || 0) + (a.secondary_tertiary_seepage_m3 || 0), "#9AA6AE", "k_seep"],
+    [(a.fill_and_drain_m3 || 0) + (a.refill_m3 || 0) + (a.turn_end_drain_m3 || 0) + (a.holding_flow_m3 || 0), "#C7CED3", "k_fill"],
+    [a.escape_m3 || 0, "#5B6B76", "k_esc"]];
+  h += `<div class="card"><h3>${esc(t("acct"))}</h3><div class="cap" style="color:var(--ink-900)">${esc(fill(t("acct_line"), {h: num(rel), d: num(a.delivered_field_inlets_m3), p: pct(100 * a.delivered_field_inlets_m3 / rel, 0)}))}</div>
+    <div class="bar">${seg.map(([v, col]) => `<i style="width:${100 * v / rel}%;background:${col}"></i>`).join("")}</div>
+    <div class="keys">${seg.map(([v, col, k]) => `<span><i style="background:${col}"></i>${esc(t(k))} ${esc(pct(100 * v / rel, 0))}</span>`).join("")}</div></div>`;
+  h += `<div class="row"><button class="btn ink" id="rep">${esc(t("report"))}</button><button class="btn line" id="sheets">${esc(t("sheets"))}</button></div>
+    `;
+  box.innerHTML = h;
+  const open = hash => window.open(`/api/planner/report?plan=${P.plan_id}&lang=${L}&demo=1${hash}`, "_blank");
+  $("#rep").onclick = () => open(""); $("#sheets").onclick = () => open("#cards");
+}
+function render(){
+  document.documentElement.lang = L;
+  document.title = t("name");
+  document.querySelectorAll("[data-t]").forEach(e => e.textContent = t(e.dataset.t));
+  document.querySelectorAll("#lang button").forEach(b => b.classList.toggle("on", b.dataset.l === L));
+  $("#chip").textContent = P ? `${when(ts(P.supply.start))} · ${num(P.supply.hours)} ${t("hours")}` : "";
+  $("#chip").style.display = P ? "" : "none";
+  legend(); results(); timeline(); paint(); comNames();
+}
+document.querySelectorAll("#lang button").forEach(b => b.onclick = () => { L = b.dataset.l; try { localStorage.setItem("demoLang", L); } catch (e) {} render(); });
+$("#legchip").onclick = () => $("#legend").classList.toggle("open");
+(async () => {
+  ST = await (await fetch("/api/state")).json();
+  if (!ST.planner) { $("#results").innerHTML = "<p>Planner not available on this network.</p>"; return; }
+  render();
+  await initMap();
+  render();
+})();
+</script>
+</body>
+</html>

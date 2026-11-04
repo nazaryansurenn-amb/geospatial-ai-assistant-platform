@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Auditor Questions</title>
+<style>
+:root{--bg:#f4f5f2;--card:#fff;--ink:#1d2a24;--muted:#5d6b64;--line:#dde3de;--accent:#176b56;--warn:#b3261e;--chip:#eef2ef}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a17;--card:#1d2420;--ink:#e6ece8;--muted:#a3b0a9;--line:#2e3833;--accent:#5cc2a0;--warn:#f28b82;--chip:#26302b}}
+:root[data-theme="dark"]{--bg:#141a17;--card:#1d2420;--ink:#e6ece8;--muted:#a3b0a9;--line:#2e3833;--accent:#5cc2a0;--warn:#f28b82;--chip:#26302b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,"Segoe UI",sans-serif}
+main{max-width:1280px;margin:0 auto;padding:10px 16px 24px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px}h1{font-size:18px;margin:0}.muted{color:var(--muted);font-size:13px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:6px 0 10px}.bar>div{height:100%;background:var(--accent)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px}
+@media (max-width:860px){.layout{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;min-width:0}
+.map{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:6px;background:#2a2f2c}
+.map canvas,.map svg{position:absolute;inset:0;width:100%;height:100%}.map polygon{fill:none;stroke:#ffd600;stroke-width:2.5}
+.zoom{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px}
+.zoom button{min-height:40px;width:44px;padding:0;text-align:center;font-size:20px;font-weight:600;opacity:.92}
+button,select,input{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:7px}
+button{padding:8px 12px;cursor:pointer;min-height:40px}button:disabled{opacity:.5;cursor:default}
+select,input{padding:7px;width:100%}
+.chip{display:inline-block;background:var(--chip);border-radius:10px;padding:1px 8px;font-size:12px;margin-right:4px}
+.q{font-size:17px;font-weight:600;margin:6px 0 8px}
+#chart{width:100%;height:auto;display:block}#chart text{fill:var(--muted);font-size:11px}
+.tw{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px}td,th{padding:2px 4px;border-bottom:1px solid var(--line);text-align:left}
+@media (max-width:480px){table{font-size:10.5px}td,th{padding:2px 2px}}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}.row>*{flex:0 1 auto;min-width:0}
+.decide{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+.decide .row button{flex:1}
+#accept{border-color:var(--accent);color:var(--accent);font-weight:600}#reject{border-color:var(--warn);color:var(--warn);font-weight:600}
+#status{font-size:13px;min-height:18px;margin-top:6px}#status.err{color:var(--warn)}#status.ok{color:var(--accent)}
+.done{background:var(--chip);border-radius:6px;padding:6px 8px;font-size:13px;margin-top:8px}
+kbd{display:inline-block;min-width:18px;text-align:center;border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:11px;margin-right:4px}
+.idx button{min-height:30px;padding:2px 10px;font-size:12px}.idx button.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:2px 10px;font-size:12px;margin:6px 0 0}dt{color:var(--muted)}dd{margin:0}
+</style></head><body><main>
+<header><h1>Auditor questions</h1><span class="muted" id="progress">Loading…</span>
+  <span class="muted" style="margin-left:auto">Check <select id="filter" style="width:auto"></select></span></header>
+<div class="bar"><div id="barfill" style="width:0"></div></div>
+<div class="layout">
+  <section class="card">
+    <div class="map"><canvas id="canvas" width="768" height="768"></canvas><svg viewBox="0 0 768 768" id="shape"></svg>
+      <div class="zoom"><button id="zin" title="Zoom in (Z)">+</button><button id="zout" title="Zoom out (X)">−</button></div></div>
+    <p class="muted" id="photo"></p>
+  </section>
+  <section class="card">
+    <div><span class="chip" id="chk"></span><span class="chip" id="pid"></span></div>
+    <div class="q" id="question"></div>
+    <div class="muted" id="meta"></div>
+    <div class="row idx"><button data-ix="ndvi" class="on"><kbd>1</kbd>NDVI</button><button data-ix="ndmi"><kbd>2</kbd>NDMI</button><button data-ix="bsi"><kbd>3</kbd>BSI</button>
+      <span class="muted">monthly median of clear dates · 2026 red, 2025 dark, 2021→24 light</span></div>
+    <svg id="chart" viewBox="0 0 440 190"></svg>
+    <div class="tw"><table id="years"></table></div>
+    <dl id="evidence"></dl>
+    <div class="decide">
+      <label class="muted" for="type">If you accept, the new type is</label>
+      <select id="type"></select>
+      <input id="comment" maxlength="500" placeholder="Comment (optional with Accept / Reject; on its own with Save comment)">
+      <div class="row"><button id="accept">Accept</button><button id="reject">Reject</button><button id="savec">Save comment</button></div>
+      <div id="decided"></div>
+      <div id="status" role="status"></div>
+    </div>
+    <div class="row"><button id="prev"><kbd>←</kbd>Back</button><button id="next"><kbd>→</kbd>Skip</button><button id="todo"><kbd>U</kbd>Next undecided</button></div>
+    <p class="muted">Each item is a question, not a found error. Accept and Reject are clicks, one item at a time; a rejection is never asked again.
+      Decisions go to the hash-chained ledger; land types v1.5 is written only when you run the apply job yourself.</p>
+  </section>
+</div></main>
+<script>
+let all = [], items = [], i = 0, zoom = 18, ix = "ndvi", token = "", names = {}, types = [];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const world = (lon, lat, z) => { const s = 256 * 2 ** z, r = lat * Math.PI / 180; return [(lon + 180) / 360 * s, (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * s]; };
+const pts = it => it.rings && it.rings.length ? it.rings.flat() : [[it.lon, it.lat]];
+function fit(it) {
+  let z = Math.min(19, it.photo_meta.max_zoom || 19);
+  for (; z > 15; z--) { const p = pts(it).map(([x, y]) => world(x, y, z)), xs = p.map(q => q[0]), ys = p.map(q => q[1]);
+    if (Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) * 1.6 <= 768) break; }
+  return z;
+}
+function drawMap(it) {
+  const p = pts(it).map(([x, y]) => world(x, y, zoom)), cx = (Math.min(...p.map(q => q[0])) + Math.max(...p.map(q => q[0]))) / 2,
+    cy = (Math.min(...p.map(q => q[1])) + Math.max(...p.map(q => q[1]))) / 2, ox = cx - 384, oy = cy - 384;
+  const ctx = $("canvas").getContext("2d"), token_ = Symbol(); drawMap.t = token_;
+  ctx.fillStyle = "#2a2f2c"; ctx.fillRect(0, 0, 768, 768);
+  for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + 767) / 256); tx++) for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + 767) / 256); ty++) {
+    const img = new Image(); img.onload = () => { if (drawMap.t === token_) ctx.drawImage(img, tx * 256 - ox, ty * 256 - oy); };
+    img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${ty}/${tx}`; }
+  $("shape").innerHTML = (it.rings || []).map(r => `<polygon points="${r.map(([x, y]) => world(x, y, zoom)).map(([x, y]) => `${(x - ox).toFixed(1)},${(y - oy).toFixed(1)}`).join(" ")}"/>`).join("");
+}
+const COLORS = {2021: "#c9d3cd", 2022: "#aebcb4", 2023: "#8fa39a", 2024: "#7d9a8c", 2025: "#2f5d4c", 2026: "#d93025"};
+function chart(it) {
+  const W = 440, H = 190, L = 32, R = 8, Tp = 8, B = 22, lo = ix === "ndvi" ? 0 : -0.5, hi = ix === "ndvi" ? 1 : 0.5;
+  const x = m => L + (W - L - R) * m / 11, y = v => Tp + (H - Tp - B) * (1 - (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo));
+  const ticks = ix === "ndvi" ? [0, .25, .5, .75, 1] : [-.5, -.25, 0, .25, .5];
+  let s = ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="currentColor" opacity=".12"/><text x="2" y="${y(v) + 4}">${v}</text>`).join("");
+  s += "JFMAMJJASOND".split("").map((c, m) => `<text x="${x(m) - 3}" y="${H - 6}">${c}</text>`).join("");
+  for (const yr of ["2021", "2022", "2023", "2024", "2025", "2026"]) {
+    const v = ((it.curve[yr] || {})[ix]) || [], p = v.map((n, m) => n == null ? null : `${x(m).toFixed(1)},${y(n).toFixed(1)}`).filter(Boolean);
+    if (p.length > 1) s += `<polyline points="${p.join(" ")}" fill="none" stroke="${COLORS[yr]}" stroke-width="${yr >= "2025" ? 2.6 : 1.4}"/>`;
+  }
+  $("chart").innerHTML = s;
+}
+function yearsTable(it) {
+  const ys = ["2021", "2022", "2023", "2024", "2025", "2026"], g = k => ys.map(y => `<td>${esc((it.years[y] || {})[k] ?? "–")}</td>`).join("");
+  $("years").innerHTML = `<tr><th></th>${ys.map(y => `<th>${y}</th>`).join("")}</tr><tr><td class="muted">season</td>${g("state").replaceAll("cultivated", "cult.")}</tr>`
+    + `<tr><td class="muted">crop cycles</td>${g("crop_cycles")}</tr><tr><td class="muted">peak NDVI</td>${g("peak_ndvi")}</tr>`;
+}
+const tname = t => t == null ? "not classifiable" : (names[t] || t);
+function show() {
+  if (!items.length) { $("question").textContent = "No questions for this filter."; return; }
+  const it = items[i]; zoom = fit(it); drawMap(it); chart(it); yearsTable(it);
+  $("chk").textContent = `Check ${it.check_no}: ${it.title}`; $("pid").textContent = `${it.proposal_id} · ${it.handle}`;
+  $("question").textContent = it.question;
+  $("meta").innerHTML = `${i + 1}/${items.length} · ${esc(it.community || "")} · <b>${it.ha.toFixed(2)} ha</b> · ${esc(it.width_class)}`
+    + ` · now <b>${esc(tname(it.from))}</b> (${esc(it.type.source)})`
+    + ` · <a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/@${it.lat},${it.lon},150m/data=!3m1!1e3">Google</a>`
+    + ` · <a target="_blank" rel="noopener noreferrer" href="https://www.bing.com/maps?cp=${it.lat}~${it.lon}&lvl=19&style=a">Bing</a>`;
+  $("photo").innerHTML = `Photo ${esc(it.photo.date || "?")}${it.photo.current === false ? ' <b style="color:var(--warn)">OLD</b>' : ""}`
+    + `${it.photo_meta.resolution_m ? " · " + it.photo_meta.resolution_m + " m" : ""} · zoom ${zoom}`;
+  $("evidence").innerHTML = Object.entries(it.evidence).map(([k, v]) => `<dt>${esc(k.replaceAll("_", " "))}</dt><dd>${esc(typeof v === "object" ? JSON.stringify(v) : v)}</dd>`).join("");
+  $("type").innerHTML = (it.suggested ? "" : `<option value="">choose a type…</option>`)
+    + types.filter(t => t !== it.from).map(t => `<option value="${t}"${t === it.suggested ? " selected" : ""}>${esc(names[t] || t)}${t === it.suggested ? " (suggested)" : ""}</option>`).join("");
+  const d = it.decision;
+  $("decided").innerHTML = (d ? `<div class="done">Decided: <b>${d.decision === "accept" ? "accepted → " + esc(tname(d.value)) : "rejected"}</b> · ${esc(d.at.slice(0, 16).replace("T", " "))}${d.comment ? " · " + esc(d.comment) : ""}. A new click replaces it.</div>` : "")
+    + it.comments.map(c => `<div class="done">Comment ${esc(c.at.slice(0, 16).replace("T", " "))}: ${esc(c.comment)}</div>`).join("");
+  $("comment").value = ""; $("status").textContent = ""; $("status").className = "";
+  const n = all.filter(x => x.decision).length;
+  $("progress").textContent = `${n} / ${all.length} decided · accepted ${all.filter(x => x.decision && x.decision.decision === "accept").length}`;
+  $("barfill").style.width = `${100 * n / Math.max(1, all.length)}%`;
+}
+async function send(decision) {
+  const it = items[i], value = $("type").value || null, comment = $("comment").value;
+  if (decision === "accept" && !value) { msg("Choose the new type first.", true); return; }
+  if (decision === "comment" && !comment.trim()) { msg("Write a comment first.", true); return; }
+  for (const b of ["accept", "reject", "savec"]) $(b).disabled = true;
+  try {
+    const r = await fetch("api/decide", {method: "POST", headers: {"Content-Type": "application/json", "X-Audit-Token": token},
+      body: JSON.stringify({proposal_id: it.proposal_id, sig: it.sig, decision, value: decision === "accept" ? value : null, comment})});
+    const res = await r.json();
+    if (!r.ok) { msg("NOT SAVED: " + res.error, true); return; }
+    const at = res.at;
+    if (decision === "comment") it.comments.push({comment, at});
+    else it.decision = {decision, value: decision === "accept" ? value : null, comment, at};
+    msg("Saved.", false);
+    if (decision !== "comment") setTimeout(nextTodo, 350); else show();
+  } catch (e) { msg("NOT SAVED: no connection", true); }
+  finally { for (const b of ["accept", "reject", "savec"]) $(b).disabled = false; }
+}
+function msg(t, err) { $("status").textContent = t; $("status").className = err ? "err" : "ok"; }
+function go(k) { i = Math.max(0, Math.min(items.length - 1, k)); show(); }
+function nextTodo() { const k = items.findIndex((x, j) => j > i && !x.decision); go(k >= 0 ? k : Math.max(0, items.findIndex(x => !x.decision))); }
+function applyFilter() { const f = $("filter").value; items = f ? all.filter(x => String(x.check_no) === f) : all;
+  const k = items.findIndex(x => !x.decision); i = k >= 0 ? k : 0; show(); }
+$("accept").onclick = () => send("accept"); $("reject").onclick = () => send("reject"); $("savec").onclick = () => send("comment");
+$("prev").onclick = () => go(i - 1); $("next").onclick = () => go(i + 1); $("todo").onclick = nextTodo;
+$("zin").onclick = () => { zoom = Math.min(items[i].photo_meta.max_zoom || 19, zoom + 1); drawMap(items[i]); };
+$("zout").onclick = () => { zoom = Math.max(14, zoom - 1); drawMap(items[i]); };
+$("filter").onchange = applyFilter;
+document.querySelectorAll(".idx button").forEach(b => b.onclick = () => { ix = b.dataset.ix;
+  document.querySelectorAll(".idx button").forEach(x => x.classList.toggle("on", x === b)); chart(items[i]); });
+document.addEventListener("keydown", e => {
+  if (["INPUT", "SELECT"].includes(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (e.key === "ArrowRight") go(i + 1); else if (e.key === "ArrowLeft") go(i - 1); else if (k === "u") nextTodo();
+  else if (k === "z") $("zin").click(); else if (k === "x") $("zout").click();
+  else if (["1", "2", "3"].includes(k)) document.querySelectorAll(".idx button")[+k - 1].click(); });
+fetch("api/items").then(r => r.json()).then(d => {
+  all = d.items; token = d.token; types = d.types; names = d.type_names;
+  const checks = [...new Set(all.map(x => x.check_no))].sort((a, b) => a - b);
+  $("filter").innerHTML = `<option value="">all (${all.length})</option>` + checks.map(c => { const n = all.filter(x => x.check_no === c);
+    return `<option value="${c}">${c}: ${esc(n[0].title)} (${n.length})</option>`; }).join("");
+  applyFilter(); });
+</script></body></html>

@@ -1,0 +1,117 @@
+{
+ "version": "canal_ops_demand_v1",
+ "frozen": "2026-11-01, plan v5 step 4b (Gate 0 G0.3 Bucket / Land types / Alfalfa / Water chain; Gate 1 G1.1-G1.7); change only as a new version",
+ "purpose": "Daily soil-water balance per parcel summed into calendar dekads: NET demand (mm, m3) expected at plan time and actual for the ledger. Field efficiency (gross) is applied once, in wp_core/canal_allocation.py.",
+ "years": {
+  "plan": 2025,
+  "capacity_reference": [2021, 2022, 2023, 2024],
+  "first_obs_year": 2021
+ },
+ "season": {
+  "dekad_months": [3, 4, 5, 6, 7, 8, 9, 10],
+  "daily_start": "02-01",
+  "dekads": "1-10, 11-20, 21-month end (8-11 days)"
+ },
+ "no_hindsight": {
+  "plan_date": "as_of = dekad start - 2 days",
+  "s2_delay_days": 1,
+  "s2_rule": "a scene dated t is usable from t + 1 day",
+  "weather_lag_days": 6,
+  "weather_rule": "ERA5 complete to as_of - 6 days; days as_of-5 .. dekad start-1 and the planned dekad use 1991-2020 normals, tagged 'expected'",
+  "actual_usable_after_days": 10,
+  "actual_rule": "actual dekad values (ERA5 + daily Kc) reach the ledger only after dekad end + 10 days"
+ },
+ "cloud_leak": {
+  "detector": "causal, per scene date: among parcels with a previous unmasked clear view within max_gap_days whose previous NDVI >= veg_ndvi, the share whose NDVI fell by >= dip_ndvi on this date; a date is a candidate when that share >= min_share over >= min_parcels parcels. Uses only views up to the date itself (later recovery is never evidence). Masked dates are not used as 'previous' views.",
+  "max_gap_days": 12,
+  "veg_ndvi": 0.35,
+  "dip_ndvi": 0.10,
+  "min_share": 0.20,
+  "min_parcels": 50,
+  "calibration": "2023 and 2025 per-date stats: ordinary dates 1-6 % of vegetated parcels dip >= 0.10, partial/hazy scenes 20-80 %",
+  "approved_file": "data/analysis/canal_ops_sim_v1/demand/cloud_leak_dates_approved.json",
+  "status_when_not_approved": "mask pending owner approval"
+ },
+ "land_classes": {
+  "source": "land types v1.4 (frozen static map made in late 2026: stated hindsight leak; the same map is used for every year)",
+  "rules": {
+   "FIELD_CROP": {"rule": "crop", "ltype": "field"},
+   "ORCHARD": {"rule": "crop", "ltype": "orchard"},
+   "VINEYARD": {"rule": "crop", "ltype": "vineyard"},
+   "PERENNIAL": {"rule": "crop", "ltype": "perennial"},
+   "CROPLAND_UNCERTAIN": {"rule": "typical_only", "ltype": "field", "note": "Field land, 2025 use not specified (group K)"},
+   "UNCLASSIFIED": {"rule": "typical_only", "ltype": "field"},
+   "NO_CROP": {"rule": "zero", "ltype": "field"},
+   "NON_FARM": {"rule": "zero", "ltype": "none"},
+   "GREENHOUSE": {"rule": "zero", "ltype": "none", "flag": "possibly wells"},
+   "NOT_CLASSIFIABLE": {"rule": "zero", "ltype": "none", "note": "v1.4 'not classifiable' (fixed NCI: under 0.01 ha or under 5 m mean width); slivers, no demand"}
+  },
+  "alfalfa_types": ["ALF"]
+ },
+ "bucket": {
+  "groups": {
+   "field": {"taw_mm": 80, "p": 0.45},
+   "alfalfa": {"taw_mm": 140, "p": 0.55},
+   "orchard": {"taw_mm": 200, "p": 0.5},
+   "vineyard": {"taw_mm": 200, "p": 0.45},
+   "perennial": {"taw_mm": 200, "p": 0.5}
+  },
+  "p_adjust": "p + 0.04 * (5 - ETc mm/day), clipped 0.1-0.8 (FAO-56)",
+  "p_clip": [0.1, 0.8],
+  "winter": {
+   "start": "11-01",
+   "start_note": "1 November of the previous year",
+   "start_depletion_share_of_taw": 0.7,
+   "kc": {"field": 0.3, "alfalfa": 0.4, "orchard": 0.3, "vineyard": 0.25, "perennial": 0.3},
+   "rule": "Nov-Jan daily balance with actual ERA5 and no irrigation gives the 1 Feb depletion (not full)"
+  },
+  "effective_rain_share": 0.75,
+  "reference": "full-supply reference bucket: every dekad receives its planned full-basis net demand spread evenly over its days; the core drives its own bucket with the simulated allocation via bucket_step"
+ },
+ "demand": {
+  "full": "max(0, depletion at dekad start + ETc - effective rain - RAW at dekad end)",
+  "typical": "max(0, depletion at dekad start + f * ETc - effective rain - RAW at dekad end)",
+  "charging": "refill below RAW (max(0, Dr + ETc - rain_eff) - full): spring/autumn charging, surplus-only, never in net demand",
+  "typical_factor": {"field": 0.75, "alfalfa": 0.75, "orchard": 0.85, "vineyard": 0.85, "perennial": 0.85},
+  "kc_plan": "daily Kc at as_of (latest usable clear view) held for the bridging days and the planned dekad"
+ },
+ "kc": {
+  "narrow_width_m": 20,
+  "inner_valid_min": 0.6,
+  "fallback_default": 0.4,
+  "tags": {
+   "observed": "fresh clear view on a wide parcel or with valid inner pixels",
+   "type-based": "fresh view but a strip under 20 m without valid inner pixels: type calendar (perennials) or community median of wide fresh FIELD_CROP parcels (field land)",
+   "fallback": "no fresh view: same estimate, separate tag (G1.5)",
+   "not applicable": "zero-demand land class"
+  }
+ },
+ "presowing": {
+  "mm_per_week": 15,
+  "season_cap_mm": 70,
+  "season_cap_band_mm": [60, 80],
+  "greenup_ndvi": 0.4,
+  "bare_ndvi": 0.3,
+  "greenup_months": [2, 6],
+  "sowing_before_greenup_days": 21,
+  "window": "from the earliest earlier-year sowing estimate - 14 days to the latest earlier-year sowing estimate (day of year), parcel's own earlier years only",
+  "window_lead_days": 14,
+  "cropped_prev_year_peak_ndvi": 0.5,
+  "applies_to": "field land (crop or typical_only rule), not alfalfa; land cropped the previous year; stops once this year's green-up is seen as of as_of"
+ },
+ "alfalfa_after_cut": {
+  "regrowth_days": 35,
+  "min_share_of_etc": 0.5,
+  "rule": "only after a cut confirmed by two consecutive clear views (add_causal is_drop) usable by as_of: full net demand >= 0.5 x ETc"
+ },
+ "ripening": {
+  "min_peak_ndvi": 0.5,
+  "below_share_of_peak": 0.85,
+  "min_days_after_peak": 10,
+  "rule": "field land (not alfalfa), observed view at as_of below 0.85 x season peak so far, at least 10 days after the peak; helper for the core's floors"
+ },
+ "capacity_reference": {
+  "statistic": "P90 of dekad net demand 2021-2024 (actual), per parcel group; branch P90 is taken by the core from the per-parcel dekad table",
+  "basis": "full"
+ }
+}

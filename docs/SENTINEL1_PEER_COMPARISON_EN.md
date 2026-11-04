@@ -73,7 +73,7 @@ unmeasured. Roughness, canopy, management and local rain remain rival explanatio
 
 ## Execution and readiness
 
-Use the product's own environment, from `C:\Projects\Echmiadzin_IrrigationTool\WORKING_PRODUCT`:
+Use the product's own environment, from the repository root:
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 -B run_sentinel1_peer_comparison.py prepare

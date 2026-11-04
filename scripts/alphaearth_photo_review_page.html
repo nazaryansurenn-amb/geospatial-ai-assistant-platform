@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Land-Type Photo Review</title>
+<style>
+:root{--bg:#f4f5f2;--card:#fff;--ink:#1d2a24;--muted:#5d6b64;--line:#dde3de;--accent:#176b56;--warn:#a35b00;--bad:#b3261e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a17;--card:#1d2420;--ink:#e6ece8;--muted:#a3b0a9;--line:#2e3833;--accent:#5cc2a0;--warn:#f0b35a;--bad:#ff8a80}}
+:root[data-theme="dark"]{--bg:#141a17;--card:#1d2420;--ink:#e6ece8;--muted:#a3b0a9;--line:#2e3833;--accent:#5cc2a0;--warn:#f0b35a;--bad:#ff8a80}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,"Segoe UI",sans-serif}
+main{max-width:1180px;margin:0 auto;padding:14px 16px 40px}h1{font-size:20px;margin:0}
+.top{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;justify-content:space-between}.muted{color:var(--muted);font-size:13px}
+.layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;margin-top:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px}
+.map{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:6px;background:#2a2f2c}
+.map canvas,.map svg{position:absolute;inset:0;width:100%;height:100%}.map polygon{fill:none;stroke:#ffd600;stroke-width:2.5}
+.photo{margin:6px 0 0;font-size:13px}.photo.old{color:var(--warn);font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}button{font:inherit;padding:7px 12px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}button.warn{border-color:var(--warn);color:var(--warn)}
+.shares{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px}.shares label{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:14px}
+.shares input{width:64px;font:inherit;padding:4px;border-radius:4px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+select,textarea{font:inherit;padding:6px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);width:100%}
+fieldset{border:1px solid var(--line);border-radius:6px;margin:8px 0;padding:6px 10px}legend{font-size:13px;color:var(--muted)}
+.sum{font-weight:600}.sum.bad{color:var(--bad)}.result{margin-top:8px;font-weight:600}.result .bad{color:var(--bad);font-weight:400}
+.hints svg{width:100%;height:auto}.hints .ax{fill:var(--muted);font-size:10px}.hints .grid{stroke:var(--line)}
+.key{font-size:12px;color:var(--muted);margin:2px 0 0}a{color:var(--accent)}
+.shares label{min-width:0}.shares input{flex:0 0 64px}
+@media (max-width:860px){.layout{grid-template-columns:1fr}}
+@media (max-width:560px){.shares{grid-template-columns:1fr}}
+</style></head><body><main>
+<div class="top"><h1>Land-type photo review</h1><span class="muted" id="progress"></span></div>
+<p class="muted" id="who"></p>
+<div class="layout">
+  <section class="card">
+    <div class="map"><canvas id="canvas" width="768" height="768"></canvas><svg id="overlay" viewBox="0 0 768 768"><polygon id="shape"/></svg></div>
+    <p class="photo" id="photo"></p>
+    <div class="row"><button id="zin">Zoom in</button><button id="zout">Zoom out</button><span class="muted" id="scale"></span></div>
+    <div class="row" id="ownerLinks"></div>
+  </section>
+  <section class="card">
+    <div class="muted" id="meta"></div>
+    <form id="form" onsubmit="return false">
+      <div id="sharesBox"><fieldset><legend>Share of the parcel area per type (%, steps of 10, must add up to 100)</legend><div class="shares" id="shares"></div>
+        <p class="sum" id="sum"></p></fieldset></div>
+      <div id="smallBox"><fieldset><legend>Small parcel: main cover and checks</legend>
+        <label>Main type <select id="main"></select></label>
+        <label>Clearly visible second type (optional) <select id="second"><option value="">none</option></select></label>
+        <label>Its share <select id="secondShare"><option>10</option><option>20</option><option>30</option><option>40</option><option>50</option></select></label>
+        <div class="row">
+          <label>Perennial structure <select id="f_perennial"><option value="">?</option><option value="true">yes</option><option value="false">no</option></select></label>
+          <label>Active in 2025 <select id="f_active"><option value="">?</option><option value="true">yes</option><option value="false">no</option></select></label>
+          <label>Built <select id="f_built"><option value="">?</option><option value="true">yes</option><option value="false">no</option></select></label>
+        </div></fieldset></div>
+      <fieldset><legend>Confidence and reason</legend>
+        <div class="row"><label><input type="radio" name="conf" value="high"> high</label><label><input type="radio" name="conf" value="medium"> medium</label></div>
+        <textarea id="reason" rows="2" maxlength="400" placeholder="What in the photo/signals supports this (e.g. parallel rows 2-3 m apart)"></textarea></fieldset>
+      <div class="row"><button class="primary" id="save"></button><button class="warn" id="defer">Defer to owner</button>
+        <button id="prev">← Back</button><button id="next">Skip →</button><button id="todo">Next unanswered</button></div>
+      <div class="result" id="result" role="status"></div>
+    </form>
+    <div class="hints" id="hints"></div>
+  </section>
+</div>
+<p class="muted">Imagery: Esri World Imagery (display only). Sentinel-2: Copernicus. Output: AI-interpreted from imagery, owner-unverified.</p>
+</main>
+<script>
+const TYPES = __TYPES__;
+const CODES = Object.keys(TYPES);
+const P = new URLSearchParams(location.search), QUEUE = P.get("queue"), REVIEWER = P.get("reviewer");
+const OWNER = REVIEWER === "owner";
+let items = [], answers = {}, i = 0, zoom = 19;
+const $ = id => document.getElementById(id);
+const world = (lon, lat, z) => { const s = 256 * 2 ** z, r = lat * Math.PI / 180;
+  return [(lon + 180) / 360 * s, (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * s]; };
+
+function fitZoom(it) {
+  for (let z = it.photo.max_zoom; z >= 15; z--) {
+    const pts = it.outline.map(([x, y]) => world(x, y, z)); const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    if (Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) * 1.4 <= 768) return z;
+  }
+  return 15;
+}
+function drawMap(it) {
+  const ctx = $("canvas").getContext("2d"); ctx.fillStyle = "#2a2f2c"; ctx.fillRect(0, 0, 768, 768);
+  const pts = it.outline.map(([x, y]) => world(x, y, zoom));
+  const cx = (Math.min(...pts.map(p => p[0])) + Math.max(...pts.map(p => p[0]))) / 2, cy = (Math.min(...pts.map(p => p[1])) + Math.max(...pts.map(p => p[1]))) / 2;
+  const ox = cx - 384, oy = cy - 384, token = Symbol(); drawMap.token = token; drawMap.pending = 0; drawMap.failed = 0;
+  for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + 767) / 256); tx++)
+    for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + 767) / 256); ty++) {
+      const img = new Image();  // display only; pixels are never read back
+      drawMap.pending++;
+      img.onload = () => { if (drawMap.token === token) { ctx.drawImage(img, tx * 256 - ox, ty * 256 - oy); drawMap.pending--; } };
+      img.onerror = () => { drawMap.errors = (drawMap.errors || 0) + 1; if (drawMap.token === token) { drawMap.pending--; drawMap.failed++; } };
+      img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${ty}/${tx}`;
+    }
+  $("shape").setAttribute("points", pts.map(([x, y]) => `${(x - ox).toFixed(1)},${(y - oy).toFixed(1)}`).join(" "));
+  const mpp = 156543.03 * Math.cos(it.lat * Math.PI / 180) / 2 ** zoom;
+  $("scale").textContent = `zoom ${zoom} · view ≈ ${Math.round(768 * mpp)} m wide · ${mpp.toFixed(2)} m per screen pixel`;
+}
+function chart(h) {
+  const W = 360, H = 150, L = 28, R = 6, T = 8, B = 20, x = m => L + m * (W - L - R) / 11, y = v => T + (0.9 - v) / 1.0 * (H - T - B);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly NDVI 2021 to 2025">`;
+  for (const v of [0, .2, .4, .6, .8]) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${L - 4}" y="${y(v) + 3}" text-anchor="end">${v.toFixed(1)}</text>`;
+  "JFMAMJJASOND".split("").forEach((m, k) => s += `<text class="ax" x="${x(k)}" y="${H - 6}" text-anchor="middle">${m}</text>`);
+  const colors = {"2021": "#9aa5a0", "2022": "#8fb3c9", "2023": "#c9b48f", "2024": "#b48fc9", "2025": "#1b8a5a"};
+  for (const [yr, vals] of Object.entries(h.ndvi)) {
+    const pts = vals.map((v, k) => v === null ? null : `${x(k)},${y(v)}`).filter(Boolean).join(" ");
+    s += `<polyline points="${pts}" fill="none" stroke="${colors[yr]}" stroke-width="${yr === "2025" ? 3 : 1.4}"/>`;
+  }
+  return s + "</svg>";
+}
+const hintCache = {};
+async function loadHints(it) {
+  if (!hintCache[it.id]) {
+    const r = await fetch(`/api/hints?queue=${QUEUE}&reviewer=${REVIEWER}&item=${it.id}`);
+    if (!r.ok) return null;
+    hintCache[it.id] = await r.json();
+  }
+  return hintCache[it.id];
+}
+function showHints(it) {
+  const h = hintCache[it.id];
+  if (!h) { $("hints").innerHTML = "<p class='muted'>Loading signals…</p>"; loadHints(it).then(x => { if (x && items[i] === it) showHints(it); }); return; }
+  $("hints").innerHTML = `<h3 style="margin:10px 0 4px;font-size:15px">Sentinel-2 signals (hints only; the photo decides)</h3>${chart(h)}
+    <p class="key">NDVI by month: 2025 bold green; 2021 grey, 2022 blue, 2023 sand, 2024 violet.</p>
+    <p class="muted">Growing cycles per year: ${Object.entries(h.cycles).map(([y, c]) => `${y}: ${c}`).join(" · ")}<br>
+    2025 bare-soil index (BSI, Apr–Sep): ${(h.bsi_2025 || []).slice(3, 9).map(v => v === null ? "–" : v.toFixed(2)).join(" ")}<br>
+    Activity history 2021–2025: ${h.history_2021_2025} · activity 2026: ${h.activity_2026} · year-to-year stability ${h.stability}</p>`;
+}
+function stage(it) { const a = answers[it.id] || {}; return OWNER ? "final" : (a.photo ? "final" : "photo"); }
+function fill(rec) {
+  document.querySelectorAll("#shares input").forEach(inp => inp.value = rec?.shares?.[inp.dataset.code] ? Math.round(rec.shares[inp.dataset.code] * 100) : "");
+  const sh = Object.entries(rec?.shares || {}).sort((a, b) => b[1] - a[1]);
+  $("main").value = sh[0]?.[0] || ""; $("second").value = sh[1]?.[0] || ""; $("secondShare").value = sh[1] ? Math.round(sh[1][1] * 100) : "10";
+  const f = rec?.flags || {}; $("f_perennial").value = f.perennial_structure ?? ""; $("f_active").value = f.active_2025 ?? ""; $("f_built").value = f.built ?? "";
+  document.querySelectorAll("input[name=conf]").forEach(r => r.checked = rec?.confidence === r.value);
+  $("reason").value = rec?.reason || ""; updateSum();
+}
+function updateSum() {
+  const t = [...document.querySelectorAll("#shares input")].reduce((s, inp) => s + (Number(inp.value) || 0), 0);
+  $("sum").textContent = `Total: ${t}%`; $("sum").classList.toggle("bad", t !== 100);
+}
+function show() {
+  const it = items[i], st = stage(it), a = answers[it.id] || {};
+  zoom = fitZoom(it); drawMap(it);
+  const ph = it.photo; $("photo").textContent = `Photo: ${ph.date} · ${ph.resolution_m} m · ${ph.provider || "unknown provider"}` +
+    (ph.current ? "" : " · OLDER THAN 2024: decide structures only; 2025 activity from Sentinel");
+  $("photo").className = "photo" + (ph.current ? "" : " old");
+  $("meta").textContent = `Parcel ${it.id} · ${it.community || ""} · ${it.area_ha.toFixed(2)} ha · ${it.mode === "small" ? "small parcel: whole-parcel answer" : "shares mode"} · stage: ${st === "photo" ? "1 of 2, photo only" : "final"}`;
+  if (it.notes?.length) $("meta").textContent += ` · Why the AI deferred: ${it.notes.join(" | ")}`;
+  $("sharesBox").hidden = it.mode !== "shares"; $("smallBox").hidden = it.mode !== "small";
+  fill(a.final || a.photo); $("result").textContent = a.final ? `Saved: ${a.final.decision.type}` : "";
+  $("save").textContent = st === "photo" ? "Save photo reading (then signals appear)" : "Save final answer";
+  if (st === "final") showHints(it); else $("hints").innerHTML = "<p class='muted'>Signals are shown after the photo reading is saved.</p>";
+  $("ownerLinks").innerHTML = OWNER ? `<a target="_blank" rel="noopener" href="https://www.google.com/maps/@${it.lat},${it.lon},150m/data=!3m1!1e3">Google satellite</a> ·
+    <a target="_blank" rel="noopener" href="https://www.bing.com/maps?cp=${it.lat}~${it.lon}&lvl=19&style=a">Bing aerial</a>` : "";
+  const done = items.filter(x => (answers[x.id] || {}).final).length;
+  $("progress").textContent = `${done} / ${items.length} final · showing ${i + 1}`;
+}
+function collect() {
+  const it = items[i]; let shares = {}, flags = {};
+  if (it.mode === "shares") document.querySelectorAll("#shares input").forEach(inp => { const v = Number(inp.value) || 0; if (v) shares[inp.dataset.code] = v / 100; });
+  else {
+    const m = $("main").value, s2 = $("second").value, p2 = Number($("secondShare").value) / 100;
+    if (!m) throw new Error("Choose the main type");
+    if (s2 && s2 !== m) { shares[m] = 1 - p2; shares[s2] = p2; } else shares[m] = 1;
+    for (const [k, id] of [["perennial_structure", "f_perennial"], ["active_2025", "f_active"], ["built", "f_built"]]) if ($(id).value) flags[k] = $(id).value === "true";
+  }
+  const conf = document.querySelector("input[name=conf]:checked")?.value;
+  if (!conf) throw new Error("Choose high or medium confidence, or defer");
+  return {shares, flags, confidence: conf, reason: $("reason").value};
+}
+async function send(body) {
+  const it = items[i], st = stage(it);
+  const r = await fetch("/api/answer", {method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({queue: QUEUE, reviewer: REVIEWER, item: it.id, stage: st, ...body})});
+  const out = await r.json();
+  if (!r.ok) { $("result").textContent = "Not saved: " + out.error; return; }
+  answers[it.id] = answers[it.id] || {}; answers[it.id][st] = {...body, decision: out.decision};
+  $("result").innerHTML = `Saved (${st}): ${out.decision.type}` + (out.contradictions?.length ? `<br><span class="bad">Check: ${out.contradictions.join("; ")}</span>` : "");
+  if (st === "final" && !out.contradictions?.length) { setTimeout(() => { if (i < items.length - 1) i++; show(); }, 600); } else if (st === "photo") show();
+}
+$("save").onclick = () => { try { send(collect()); } catch (e) { $("result").textContent = e.message; } };
+$("defer").onclick = () => { const reason = $("reason").value.trim(); if (!reason) { $("result").textContent = "Write why it is unclear, then defer."; return; } send({defer: true, reason}); };
+$("prev").onclick = () => { if (i > 0) i--; show(); };
+$("next").onclick = () => { if (i < items.length - 1) i++; show(); };
+$("todo").onclick = () => { const j = items.findIndex(x => !(answers[x.id] || {}).final); if (j >= 0) { i = j; show(); } };
+$("zin").onclick = () => { zoom = Math.min(items[i].photo.max_zoom, zoom + 1); drawMap(items[i]); };
+$("zout").onclick = () => { zoom = Math.max(14, zoom - 1); drawMap(items[i]); };
+$("shares").innerHTML = CODES.map(c => `<label title="${TYPES[c].key}">${c} · ${TYPES[c].en}<input type="number" min="0" max="100" step="10" data-code="${c}"></label>`).join("");
+document.querySelectorAll("#shares input").forEach(inp => inp.addEventListener("input", updateSum));
+for (const id of ["main", "second"]) $(id).innerHTML += CODES.filter(c => c !== "TRE" || id === "second").map(c => `<option value="${c}">${c} · ${TYPES[c].en}</option>`).join("");
+$("main").insertAdjacentHTML("afterbegin", '<option value="">choose…</option>'); $("main").value = "";
+$("who").textContent = `Queue: ${QUEUE} · reviewer: ${REVIEWER}` + (OWNER ? " · Google/Bing links available" : " · two-stage reading: photo first, then signals");
+// Helpers for reviewer agents: open a parcel by id, wait for tiles, locate the map, save by id (same validated API).
+window.review = {
+  open(id) { const j = items.findIndex(x => x.id === id); if (j < 0) throw new Error("unknown parcel " + id); i = j; show(); return this.current(); },
+  current() { const it = items[i]; return {id: it.id, mode: it.mode, area_ha: it.area_ha, photo: it.photo, stage: stage(it), zoom}; },
+  async tilesReady(ms = 15000) { const t0 = Date.now(); while (drawMap.pending > 0 && Date.now() - t0 < ms) await new Promise(r => setTimeout(r, 150));
+    return {loaded: drawMap.pending === 0, failed: drawMap.failed}; },
+  mapRect() { const r = $("canvas").getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.right), Math.round(r.bottom)]; },
+  setZoom(z) { zoom = Math.max(14, Math.min(items[i].photo.max_zoom, z)); drawMap(items[i]); return zoom; },
+  async save(body) { const it = items[i], st = stage(it);
+    const r = await fetch("/api/answer", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({queue: QUEUE, reviewer: REVIEWER, item: it.id, stage: st, ...body})});
+    const out = await r.json(); if (!r.ok) return {ok: false, error: out.error};
+    answers[it.id] = answers[it.id] || {}; answers[it.id][st] = {...body, decision: out.decision}; show(); return {ok: true, stage: st, ...out}; },
+  hintsText() { return $("hints").innerText; },
+  // Map-only view so a plain screenshot shows the photo at full size (no coordinate mapping needed).
+  focusMap(on = true) { document.querySelector(".map").style.cssText = on ?
+    "position:fixed;left:0;top:0;width:min(100vw,100vh);height:min(100vw,100vh);z-index:1000;aspect-ratio:auto" : ""; return on; },
+  // Raw signals, released by the server only after the photo reading is saved.
+  async hintsData() { const it = items[i]; return stage(it) === "photo" ? null : await loadHints(it); }
+};
+// Map-only view for headless capture: just the photo and outline, plus a marker until every tile has loaded.
+async function mapOnly() {
+  document.querySelector(".layout").style.display = "block";
+  document.querySelectorAll("main > *:not(.layout), .layout > section:not(:first-child), .layout > section:first-child > :not(.map)")
+    .forEach(el => el.style.display = "none");
+  document.body.style.background = "#000"; document.querySelector("main").style.padding = "0";
+  const m = document.querySelector(".map"); m.style.cssText = "position:fixed;left:0;top:0;width:100vmin;height:100vmin;border-radius:0";
+  const flag = document.createElement("div"); flag.id = "loading";
+  flag.style.cssText = "position:fixed;left:8px;top:8px;background:#b3261e;color:#fff;font:bold 20px system-ui;padding:4px 10px;z-index:2000";
+  flag.textContent = "TILES LOADING"; document.body.appendChild(flag);
+  const z = Number(P.get("zoom")); if (z) window.review.setZoom(z);
+  const t = await window.review.tilesReady(20000);
+  flag.textContent = t.failed ? `${t.failed} TILE(S) FAILED` : ""; flag.style.display = t.failed || !t.loaded ? "block" : "none";
+  document.title = t.loaded && !t.failed ? "READY" : "INCOMPLETE";
+}
+// Render-only views for prerendered review images (v2): one parcel (view=map) or a numbered block (view=block).
+// They fetch only their own parcels, draw every part of multi-part parcels, use thin outlines and dim the outside.
+async function renderOnly(view) {
+  const data = view === "block" ? await fetch(`/api/block?queue=${QUEUE}&block=${P.get("block")}`).then(r => r.json())
+                                : {items: [await fetch(`/api/item?queue=${QUEUE}&item=${P.get("item")}`).then(r => r.json())]};
+  document.body.innerHTML = '<div id="v" style="position:fixed;inset:0;width:100vmin;height:100vmin;background:#2a2f2c">' +
+    '<canvas id="c" width="768" height="768" style="position:absolute;inset:0;width:100%;height:100%"></canvas>' +
+    '<svg id="o" viewBox="0 0 768 768" style="position:absolute;inset:0;width:100%;height:100%"></svg></div>' +
+    '<div id="flag" style="position:fixed;left:8px;top:8px;background:#b3261e;color:#fff;font:bold 20px system-ui;padding:4px 10px">TILES LOADING</div>';
+  const rings = data.items.flatMap(it => it.parts || [it.outline]);
+  const maxZoom = Math.min(...data.items.map(it => it.photo.max_zoom));
+  let z = Number(P.get("zoom")) || maxZoom;
+  for (; z > 14; z--) { const p = rings.flat().map(([x, y]) => world(x, y, z)), xs = p.map(q => q[0]), ys = p.map(q => q[1]);
+    if (Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) * (view === "block" ? 1.08 : 1.3) <= 768) break; }
+  const all = rings.flat().map(([x, y]) => world(x, y, z)), xs = all.map(q => q[0]), ys = all.map(q => q[1]);
+  const ox = (Math.min(...xs) + Math.max(...xs)) / 2 - 384, oy = (Math.min(...ys) + Math.max(...ys)) / 2 - 384;
+  const ctx = document.getElementById("c").getContext("2d"); let pending = 0, failed = 0;
+  for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + 767) / 256); tx++) for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + 767) / 256); ty++) {
+    pending++; const img = new Image();
+    img.onload = () => { ctx.drawImage(img, tx * 256 - ox, ty * 256 - oy); pending--; };
+    // Some 2021-photo areas lack tiles at this zoom: draw the matching quarter of the parent tile (one level up), scaled.
+    img.onerror = () => { const up = new Image();
+      up.onload = () => { ctx.drawImage(up, (tx & 1) * 128, (ty & 1) * 128, 128, 128, tx * 256 - ox, ty * 256 - oy, 256, 256); pending--; };
+      up.onerror = () => { pending--; failed++; };
+      up.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z - 1}/${ty >> 1}/${tx >> 1}`; };
+    img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}`; }
+  const pathOf = ring => "M" + ring.map(([x, y]) => { const [px, py] = world(x, y, z); return `${(px - ox).toFixed(1)},${(py - oy).toFixed(1)}`; }).join("L") + "Z";
+  let svg = `<path d="M0,0H768V768H0Z ${rings.map(pathOf).join(" ")}" fill="rgba(0,0,0,.38)" fill-rule="evenodd"/>`;
+  svg += rings.map(r => `<path d="${pathOf(r)}" fill="none" stroke="#ffd600" stroke-width="1.4"/>`).join("");
+  if (view === "block") data.items.forEach((it, k) => { const [px, py] = world(it.lon, it.lat, z);
+    svg += `<g transform="translate(${(px - ox).toFixed(1)},${(py - oy).toFixed(1)})"><circle r="11" fill="rgba(0,0,0,.72)" stroke="#ffd600" stroke-width="1.2"/>` +
+           `<text text-anchor="middle" dy="5" fill="#fff" font="bold 14px system-ui" style="font:bold 14px system-ui">${k + 1}</text></g>`; });
+  document.getElementById("o").innerHTML = svg;
+  const t0 = Date.now(); while (pending > 0 && Date.now() - t0 < 20000) await new Promise(r => setTimeout(r, 150));
+  const flag = document.getElementById("flag");
+  if (pending === 0 && !failed) { flag.remove(); document.title = "READY"; } else { flag.textContent = failed ? `${failed} TILE(S) FAILED` : "TILES LOADING"; document.title = "INCOMPLETE"; }
+}
+if (["map", "block"].includes(P.get("view")) && (P.get("item") || P.get("block"))) renderOnly(P.get("view"));
+else Promise.all([fetch(`/api/queue?queue=${QUEUE}`).then(r => r.json()), fetch(`/api/answers?queue=${QUEUE}&reviewer=${REVIEWER}`).then(r => r.json())])
+  .then(([q, a]) => { items = q.items; answers = a; const want = P.get("item"), j = want ? items.findIndex(x => x.id === want) : items.findIndex(x => !(answers[x.id] || {}).final);
+    i = j >= 0 ? j : 0; show(); window.review.loaded = true; if (P.get("view") === "map") mapOnly(); });
+</script></body></html>

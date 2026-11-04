@@ -35,14 +35,14 @@ The six clearer one-season leads are:
 
 | Community | Cadastral code | Official area, m² | Qualifying year |
 |---|---|---:|---:|
-| Ակնալիճ | 04-004-0115-0013 | 10,122.27 | 2024 |
-| Աղավնատուն | 04-006-0239-0006 | 4,069.47 | 2023 |
-| Աղավնատուն | 04-006-0296-0001 | 5,872.42 | 2023 |
-| Ամբերդ | 04-008-0108-0026 | 7,268.99 | 2023 |
-| Դողս | 04-038-0108-0014 | 8,225.53 | 2021 |
-| Շահումյան | 04-077-0025-0017 | 2,833.46 | 2023 |
+| Ակնալիճ | 04-004-9115-0013 | 10,122.27 | 2024 |
+| Աղավնատուն | 04-006-9239-0006 | 4,069.47 | 2023 |
+| Աղավնատուն | 04-006-9296-0001 | 5,872.42 | 2023 |
+| Ամբերդ | 04-008-9108-0026 | 7,268.99 | 2023 |
+| Դողս | 04-038-9108-0014 | 8,225.53 | 2021 |
+| Շահումյան | 04-077-9025-0017 | 2,833.46 | 2023 |
 
-The multi-year mixed-support lead is Ամբերդ, **04-008-0108-0030**,
+The multi-year mixed-support lead is Ամբերդ, **04-008-9108-0030**,
 official area 2,066.61 m², with qualifying seasons in 2024 and 2025. It contains
 only one completely internal 20 m pixel; it must not be promoted to the
 clearer-support category merely because its pattern repeats.

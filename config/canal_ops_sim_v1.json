@@ -1,0 +1,201 @@
+{
+ "version": "canal_ops_sim_v1",
+ "frozen": "2026-11-01, owner-approved plan v5 (docs/IRRIGATION_AGENT_ARCHITECTURE_2026_11_01_EN.md, Gate 0 G0.3); change only as a new version",
+ "labels": {
+  "network": "Illustrative network: real main canal, synthetic offtakes, gates and branches",
+  "simulation": "Simulation - not a water order, not a WUA distribution decision",
+  "capacity": "Demand-derived estimate, not design capacity",
+  "supply": "Illustrative supply scenario: share available to the observed zone (assumed)",
+  "rule": "Illustrative sharing rule, not legal priority"
+ },
+ "water_chain": {
+  "note": "supply = gross at canal head; allocation = gross at gate after losses by distance; need = net / field efficiency. Efficiency applied exactly once (need side).",
+  "field_efficiency": {
+   "field": 0.6,
+   "orchard": 0.6,
+   "vineyard": 0.6,
+   "perennial": 0.6,
+   "drip": 0.85
+  },
+  "field_efficiency_band": [
+   0.5,
+   0.65
+  ]
+ },
+ "losses": {
+  "main_canal_pct_per_km": 0.5,
+  "branch_pct_per_km": 2.0,
+  "stage2_draws_through_stage1": true,
+  "note": "assumed; earthen branches 1.5-3 %/km, lined main canal about 0.5 %/km"
+ },
+ "travel": {
+  "velocity_km_per_day": 40,
+  "freeze_days": 2
+ },
+ "dekad": {
+  "days": "1-10, 11-20, 21-month end",
+  "main_canal_hours": "24 x days in dekad",
+  "rider_daytime_hours": 140
+ },
+ "turns": {
+  "efficiency_of_flow": 0.8,
+  "fill_hours": 2,
+  "gate_stream_lps": 60,
+  "gate_stream_band_lps": [
+   40,
+   80
+  ],
+  "min_flow_share": 0.4,
+  "min_flow_lps": 30,
+  "formula": "hours = V[m3] / (0.8 * Q[l/s] * 3.6) + 2"
+ },
+ "capacity": {
+  "basis": "P90 of 2021-2024 dekad gross demand per branch, x 1.10",
+  "headroom": 1.1,
+  "clamp_lps_per_ha": [
+   0.8,
+   1.6
+  ],
+  "branch_min_lps": 50,
+  "branch_sized_for": "largest rotation group",
+  "rounding_lps": 10
+ },
+ "supply": {
+  "monthly_factor": {
+   "3": 0.0,
+   "4": 0.5,
+   "5": 0.75,
+   "6": 1.0,
+   "7": 1.0,
+   "8": 1.0,
+   "9": 0.7,
+   "10": 0.4
+  },
+  "scenarios": {
+   "normal": 1.0,
+   "short20": 0.8,
+   "short40": 0.6
+  },
+  "head_capacity_rule": "sum of branch capacities x 0.92 / main canal efficiency"
+ },
+ "rules": {
+  "A": {
+   "name": "level-fill",
+   "levels": [
+    {
+     "key": "L1",
+     "group": "perennial",
+     "share": 0.5,
+     "young_share": 1.0
+    },
+    {
+     "key": "L2",
+     "group": "sensitive_field",
+     "share": 0.8
+    },
+    {
+     "key": "L3",
+     "group": "perennial",
+     "share": 0.8
+    },
+    {
+     "key": "L4",
+     "group": "other_green_field",
+     "share": 0.5
+    },
+    {
+     "key": "L5",
+     "group": "all",
+     "share": 1.0
+    }
+   ]
+  },
+  "B": {
+   "name": "proportional to requested or irrigated hectares"
+  },
+  "C": {
+   "name": "proportional to planned limit per stage",
+   "limit": null,
+   "when_missing": "planned limit: not connected"
+  }
+ },
+ "floors": {
+  "apply_min_stage_weight": 0.6,
+  "never_while_ripening": true,
+  "perennial_share_of_etc": {
+   "orchard": 0.5,
+   "vineyard": 0.35,
+   "perennial": 0.45
+  },
+  "no_zero_two_dekads": "per gate cluster, fresh views only",
+  "when_infeasible": "floors not met: scale floors in proportion (or relax in owner order, a standing constraint); never block the plan",
+  "zero_streak_floor_share": 0.3
+ },
+ "bucket": {
+  "taw_mm": {
+   "field": 80,
+   "alfalfa": 140,
+   "orchard": 200,
+   "vineyard": 200,
+   "perennial": 200
+  },
+  "p": {
+   "field": 0.45,
+   "alfalfa": 0.55,
+   "orchard": 0.5,
+   "vineyard": 0.45,
+   "perennial": 0.5
+  },
+  "p_adjust": "p + 0.04 * (5 - ETc mm/day), clipped 0.1-0.8 (FAO-56)",
+  "start": "1 Feb from Nov-Jan rain balance"
+ },
+ "yield_proxy": {
+  "ky": {
+   "field": 1.0
+  },
+  "band": 0.2,
+  "perennials": "stressed dekads only",
+  "label": "indicative, internal"
+ },
+ "ledger": {
+  "deficit_meaning": "simulated deficit (planning signal, no entitlement); never added to demand"
+ },
+ "agent_budget": {
+  "max_simulations_per_agent_per_dekad": 8,
+  "planner_candidates": 3,
+  "debate_rounds": 2
+ },
+ "wording_ban": {
+  "en": [
+   "command area",
+   "irrigation pressure",
+   "must",
+   "release",
+   "send water to",
+   "open gate",
+   "owed",
+   "entitled",
+   "compensation",
+   "make-up water",
+   "your turn",
+   "design capacity",
+   "legal priority",
+   "head loss",
+   "pump energy"
+  ],
+  "hy": [
+   "հրամանային տարածք",
+   "պարտք",
+   "փոխհատուցում",
+   "ձեր հերթն է",
+   "բացեք փականը"
+  ],
+  "ru": [
+   "командная площадь",
+   "задолженность",
+   "компенсация",
+   "ваша очередь",
+   "откройте затвор"
+  ]
+ }
+}

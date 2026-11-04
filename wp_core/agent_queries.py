@@ -308,7 +308,7 @@ def persist_result(result, directory=RESULTS):
 
 def parcel_result(code, language='en', index=INDEX):
     if not isinstance(code,str) or not re.fullmatch(r'\d{2}-\d{3}-\d{4}-\d{4}',code):
-        raise QueryError('Use the complete cadastral code, for example 04-013-0122-0013.')
+        raise QueryError('Use the complete cadastral code, for example 04-013-9122-0013.')
     with sqlite3.connect(Path(index).resolve().as_uri()+'?mode=ro',uri=True) as c:
         frame=pd.read_sql_query('SELECT * FROM parcels WHERE cadastre_code=?',c,params=[code])
     if frame.empty:

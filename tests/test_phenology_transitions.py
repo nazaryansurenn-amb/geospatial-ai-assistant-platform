@@ -129,7 +129,7 @@ def test_real_regression_both_thinning_phases_do_not_become_perennial():
     if not (source/'complete.json').exists():
         pytest.skip('Private cached control dataset is not installed')
     spatial = pd.read_parquet(source/'spatial.parquet')
-    i = spatial.index[spatial.cadastre_code.eq('04-014-0228-0011')][0]
+    i = spatial.index[spatial.cadastre_code.eq('04-014-9228-0011')][0]
     frame = pd.read_parquet(source/'daily.parquet', filters=[('internal_parcel_id', '=', spatial.internal_parcel_id.iloc[i]), ('year', '=', 2024)])
     weights = []
     for res in (10, 20):

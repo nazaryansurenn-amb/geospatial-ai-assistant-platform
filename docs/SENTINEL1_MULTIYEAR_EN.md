@@ -41,7 +41,7 @@ relative radar signals are private screening evidence, not measured water use.
 
 ## Reproducible stages and later weather
 
-From `C:\Projects\Echmiadzin_IrrigationTool\WORKING_PRODUCT`:
+From the repository root:
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 -B run_sentinel1_multiyear.py prepare

@@ -1,0 +1,58 @@
+{
+  "version": "alphaearth_groups_20261030_v1",
+  "owner_request": "2026-10-30: new parcel classification built on Google DeepMind's AlphaEarth Foundations embeddings; separate candidate, no map or release change",
+  "status": "candidate_not_accepted",
+  "dataset": "GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL",
+  "credit": "The AlphaEarth Foundations Satellite Embedding dataset is produced by Google and Google DeepMind.",
+  "earth_engine_project": "concise-beanbag-425116-r6",
+  "years_initial": [2025],
+  "years_followup_after_naming": [2021, 2022, 2023, 2024],
+  "scope": "lower_hrazdan_stage_1_and_2_without_household_and_roads",
+  "expected_eligible": 22802,
+  "grid": {
+    "source": "data/observations/observations_2021_2025_v1/sampling/exact_area_10m.npz",
+    "source_sha256": "e3faf5884b8bec60873a67e57ae6fd548ddfc4bbeb76e0e55c321d6684c09fe3",
+    "parcel_order": "data/observations/observations_2021_2025_v1/parcels.parquet",
+    "interiors": "data/analysis/observation_screening/transitions_area_20260906_v1/weights_10m.npz",
+    "crs": "EPSG:32638",
+    "resolution_m": 10,
+    "origin_x": 424490.0,
+    "origin_y": 4456920.0,
+    "width": 2551,
+    "height": 1646
+  },
+  "download": {
+    "tile_px": 512,
+    "quantisation_scale": 127,
+    "nodata": -128,
+    "maximum_attempts": 5
+  },
+  "training": {
+    "pure_pixel_min_area_m2": 99.9,
+    "max_pixels_per_parcel": 50,
+    "seed": 20261030
+  },
+  "clustering": {
+    "k_values": [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+    "restarts": 10,
+    "iterations": 60,
+    "silhouette_sample": 20000,
+    "min_median_restart_ari": 0.8
+  },
+  "parcel": {
+    "mixed_if_dominant_share_below": 0.5,
+    "small_if_pixel_equivalents_below": 3
+  },
+  "accuracy": {
+    "sample_size": 300,
+    "minimum_per_group": 30,
+    "seed": 20261031,
+    "design": "stratified random by mapped group; area-weighted ratio estimates (Olofsson et al. 2014; Stehman 2014)",
+    "window_m": {"minimum": 200, "maximum": 1000, "parcel_extent_multiple": 3}
+  },
+  "outputs": {
+    "data": "data/analysis/alphaearth/alphaearth_groups_20261030_v1",
+    "review": "server_data/review/alphaearth_groups_20261030_v1"
+  },
+  "publication": "none; local owner review only"
+}

@@ -36,7 +36,7 @@ def execute(phase):
     assert summary["summaries"]["lower_hrazdan"]["all"]["groups"] == 31
     assert summary["summaries"]["lower_hrazdan"]["priority"]["groups"] == 20
     lookup = json.loads((REVIEW / "parcel_lookup.json").read_text())
-    codes = sorted(lookup)[::20] + ["04-087-0119-0005", "04-002-0145-0007", "04-023-0135-0011"]
+    codes = sorted(lookup)[::20] + ["04-087-9119-0005", "04-002-9145-0007", "04-023-9135-0011"]
     index = ROOT / "server_data/land_analytics_land_potential_1km_review_20260906_v1.sqlite3"
     with sqlite3.connect(index.as_uri() + "?mode=ro", uri=True) as c:
         codes.append(c.execute("SELECT cadastre_code FROM potential_expansion WHERE potential_class='gravity_candidate' LIMIT 1").fetchone()[0])

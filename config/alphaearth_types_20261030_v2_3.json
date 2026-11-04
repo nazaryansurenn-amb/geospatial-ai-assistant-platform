@@ -1,0 +1,249 @@
+{
+  "version": "alphaearth_types_20261030_v2_3",
+  "method": "manual AI interpretation of imagery with owner verification; no model training",
+  "status": "candidate_not_accepted",
+  "output_label": "AI-interpreted from imagery, owner-unverified",
+  "year": 2025,
+  "types": {
+    "VIN": {
+      "en": "Vineyard (mature)",
+      "hy": "Խաղողի այգի",
+      "tier": "A",
+      "group": "perennial",
+      "key": "Regular parallel rows 2-3 m apart, posts or trellis, soil visible between rows; green May-October"
+    },
+    "ORC": {
+      "en": "Orchard (fruit/nut trees)",
+      "hy": "Պտղատու այգի",
+      "tier": "A",
+      "group": "perennial",
+      "key": "Tree crowns on a grid with round shadows; green all season"
+    },
+    "ALF": {
+      "en": "Alfalfa / perennial forage",
+      "hy": "Առվույտ, բազմամյա խոտաբույսեր",
+      "tier": "B",
+      "group": "perennial",
+      "key": "Uniform dense green without rows; several cut-and-regrow dips in NDVI; green in several years"
+    },
+    "ANN": {
+      "en": "Annual crops (2025)",
+      "hy": "Միամյա մշակաբույսեր (2025)",
+      "tier": "A",
+      "group": "annual",
+      "key": "Sown rows or uniform field with a clear 2025 growing season; changes between years"
+    },
+    "GRH": {
+      "en": "Greenhouses",
+      "hy": "Ջերմոցներ",
+      "tier": "A",
+      "group": "protected",
+      "key": "White or grey roofs in rows"
+    },
+    "NCU": {
+      "en": "Not cultivated in 2025 (field)",
+      "hy": "2025-ին չմշակված դաշտ",
+      "tier": "A",
+      "group": "not_cultivated",
+      "key": "Field pattern (edges, old furrows) but no 2025 growing season; never called abandoned"
+    },
+    "GRS": {
+      "en": "Grass / pasture / weeds",
+      "hy": "Խոտածածկ, արոտ, մոլախոտ",
+      "tier": "B",
+      "group": "not_cultivated",
+      "key": "Patchy uneven green without rows or tillage"
+    },
+    "BLT": {
+      "en": "Buildings / yards / tracks",
+      "hy": "Շինություններ, բակեր",
+      "tier": "A",
+      "group": "non_agricultural",
+      "key": "Roofs, paved or packed yards, dirt farm tracks and ditches/canal margins wider than about 5 m inside the parcel"
+    },
+    "WAT": {
+      "en": "Water / wet ground",
+      "hy": "Ջուր, խոնավ հող",
+      "tier": "A",
+      "group": "non_agricultural",
+      "key": "Open water, reeds, dark wet soil"
+    },
+    "NAT": {
+      "en": "Bare natural land",
+      "hy": "Բնական մերկ հող",
+      "tier": "B",
+      "group": "non_agricultural",
+      "key": "Semi-desert, rock or erosion with no field pattern in any year"
+    },
+    "TRE": {
+      "en": "Non-fruit tree rows / windbreak",
+      "hy": "Ոչ պտղատու ծառաշարեր",
+      "tier": "component",
+      "group": "non_agricultural",
+      "key": "One or two lines of tall trees with long shadows; component only, never a parcel's type"
+    }
+  },
+  "outcomes": {
+    "MIX": {
+      "en": "Mixed cultivation",
+      "hy": "Խառը մշակում"
+    },
+    "PART": {
+      "en": "Partly cultivated",
+      "hy": "Մասամբ մշակված"
+    },
+    "DEFER": {
+      "en": "Sent to owner",
+      "hy": "Ուղարկված սեփականատիրոջը"
+    },
+    "NCI": {
+      "en": "Not classifiable from imagery",
+      "hy": "Պատկերից չդասակարգվող"
+    }
+  },
+  "rules": {
+    "share_step": 0.1,
+    "zero_below": 0.1,
+    "majority": 0.5,
+    "small_parcel_below_ha": 0.5,
+    "order": [
+      "non_agricultural >= majority -> largest non-agricultural type (never TRE alone)",
+      "single perennial type >= majority -> that type",
+      "cultivated >= majority -> largest cultivated type if >= majority else MIX",
+      "cultivated > 0 and < majority -> PART",
+      "otherwise largest of NCU/GRS"
+    ],
+    "fixed_status": {
+      "code": "NCI",
+      "below_ha": 0.01,
+      "below_mean_width_m": 5,
+      "mean_width": "2 * area / perimeter of the official geometry (metres)"
+    },
+    "weak_spring_peak": {
+      "applies_to": [
+        "ANN",
+        "NCU"
+      ],
+      "result": "ANN",
+      "attribute": "uncertain_2025_activity",
+      "condition": "2025 NDVI spring peak (March-May) >= 0.35 and < 0.5, at least 0.15 above the mean of January-February, mean NDVI June-September < 0.3, no detected 2025 annual cycle",
+      "min_peak": 0.35,
+      "min_rise_over_winter": 0.15
+    },
+    "natural_ground_crop_season": {
+      "applies_to": [
+        "NAT"
+      ],
+      "years": [
+        "2021",
+        "2022",
+        "2023",
+        "2024",
+        "2025"
+      ],
+      "signal": "detected annual-type crop cycle (cycles >= 1) in the year",
+      "action": "contradiction: reconsider as NCU (field, no 2025 season), ANN (2025 season) or defer"
+    },
+    "alfalfa_cut_signature": {
+      "years": [
+        "2023",
+        "2024",
+        "2025"
+      ],
+      "min_cuts": 3,
+      "min_years": 2,
+      "min_green_days": 120,
+      "applies_to": [
+        "ANN",
+        "GRS",
+        "NCU"
+      ],
+      "action": "contradiction: reconsider as ALF (or MIX/PART when only part is alfalfa) or defer"
+    },
+    "alfalfa_without_cuts": {
+      "years": [
+        "2023",
+        "2024",
+        "2025"
+      ],
+      "applies_to": [
+        "ALF"
+      ],
+      "cuts_below": 2,
+      "green_days_below": 150,
+      "action": "contradiction when no year has >= 2 cuts and no year has >= 150 green days: reconsider or defer"
+    }
+  },
+  "evidence": {
+    "primary": "Esri World Imagery tiles (zoom 18-19) drawn in the browser, with photo date from Esri imagery metadata",
+    "second": [
+      "Esri Wayback dated releases",
+      "local Sentinel-2 2021-2025 curves and cycle events",
+      "Sentinel-1 where available"
+    ],
+    "owner_only": [
+      "Google Maps",
+      "Bing Maps"
+    ],
+    "hidden_from_reviewers": [
+      "AlphaEarth group",
+      "Transitions classes",
+      "any model output",
+      "owner and gold answers",
+      "AlphaEarth stability and 8526 history/activity classes"
+    ],
+    "photo_age": {
+      "current_from": "2024-01-01"
+    },
+    "hints_excluded": [
+      "AlphaEarth stability",
+      "8526 history and activity classes (product outputs; keeps labels independent)"
+    ]
+  },
+  "pilot": {
+    "size": 300,
+    "agreement_per_type_min": 0.8,
+    "reviewers_start": 3,
+    "reviewers_steps": [
+      3,
+      6,
+      10
+    ],
+    "reviewers_max": 10
+  },
+  "watchdog": {
+    "batch_size": 100,
+    "gold_share": 0.05,
+    "recheck_share": 0.1,
+    "pause": {
+      "gold_agreement_below": 0.75,
+      "contradictions_above": 0.05,
+      "deferral_outside": [
+        0.05,
+        0.4
+      ]
+    }
+  },
+  "block": {
+    "max_parcels": 15,
+    "window_m": 170,
+    "zoom": 19,
+    "single_mode_if_parcel_larger_than_window": true
+  },
+  "supersedes": "alphaearth_types_20261030_v2_2",
+  "photo_stage": {
+    "allowed": [
+      "VIN",
+      "ORC",
+      "GRH",
+      "BLT",
+      "WAT",
+      "NAT",
+      "TRE",
+      "FLD"
+    ],
+    "FLD": "field or open land whose 2025 use (ANN, NCU, GRS, ALF) is decided only after the signals",
+    "reason": "autumn/winter photos show harvested fields; 25% of pilot photo readings were overturned by signals"
+  },
+  "change_note": "2026-10-30 (owner): alfalfa evidence from the frequent Sentinel-2 series. Cut-and-regrow events per year (NDVI >= 0.5, drop >= 0.2 within 21 days, regrowth >= 0.15 within 50 days, April-October) and green days are shown to reviewers. Calibrated on 187 owner labels: >= 3 cuts in >= 2 of 2023-2025 with >= 120 green days flagged 3/10 owner alfalfa and 4/177 other parcels, so it is used as strong evidence FOR alfalfa (contradiction on ANN/GRS/NCU) and only a weak check against."
+}

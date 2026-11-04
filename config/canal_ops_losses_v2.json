@@ -1,0 +1,15 @@
+{
+ "version": "canal_ops_losses_v2",
+ "network": "data/analysis/canal_ops_sim_v1/network_v3",
+ "frozen": "2026-11-02, owner: main canal loses 15 % and the secondary network (secondary + tertiary) 30 % on average; field efficiency 0.6 separate. Change only as a new version.",
+ "targets": {
+  "main_canal": 0.15,
+  "secondary_network": 0.3
+ },
+ "rates_pct_per_km": {
+  "main": 0.64756,
+  "secondary": 6.102016,
+  "tertiary": 9.153024
+ },
+ "definition": "are defined (the water actually carried decides the weights):\n  - main canal: of the water released at the head for the offtakes, the share lost before it reaches its offtake,\n    weighted by the head water each offtake takes;\n  - secondary network: of the water entering a secondary canal at its main-canal gate, the share lost before it\n    reaches the farm outlet, weighted by the water entering for each outlet.\nWeights = each farm outlet's plan-time gross need summed over 2021-2024 (no 2025: no hindsight), as for the canal sizing.\nLosses grow with distance: keep = (1 - rate)^km on every link, one rate for the main canal, and one factor on the\nsecondary (2 %/km) and tertiary (3 %/km) rates of config/canal_ops_network_v2.json so their 2 : 3 ratio is kept.\nEach rate is found by bisection so the weighted average equals the owner's figure exactly. Simulation: assumed losses."
+}

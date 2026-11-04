@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verify AI Answers</title>
+<style>
+:root{--bg:#f4f5f2;--card:#fff;--ink:#1d2a24;--muted:#5d6b64;--line:#dde3de;--accent:#176b56;--no:#b3261e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a17;--card:#1d2420;--ink:#e6ece8;--muted:#a3b0a9;--line:#2e3833;--accent:#5cc2a0;--no:#ff8a80}}
+:root[data-theme="dark"]{--bg:#141a17;--card:#1d2420;--ink:#e6ece8;--muted:#a3b0a9;--line:#2e3833;--accent:#5cc2a0;--no:#ff8a80}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,"Segoe UI",sans-serif}
+main{max-width:1100px;margin:0 auto;padding:14px 16px 32px}h1{font-size:20px;margin:0}.muted{color:var(--muted);font-size:14px}
+.layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;margin-top:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px}
+.map{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:6px;background:#2a2f2c}
+.map canvas,.map svg{position:absolute;inset:0;width:100%;height:100%}.map polygon{fill:none;stroke:#ffd600;stroke-width:2.5}
+.answer{font-size:22px;font-weight:700;margin:6px 0}.comp{font-size:14px;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+button{font:inherit;padding:12px 16px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;min-height:48px}
+.yes{background:var(--accent);border-color:var(--accent);color:#fff}.nob{border-color:var(--no);color:var(--no)}
+select,input{font:inherit;padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);width:100%}
+kbd{border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:12px;margin-left:6px}a{color:var(--accent)}
+#fix[hidden]{display:none}@media (max-width:820px){.layout{grid-template-columns:1fr}}
+</style></head><body><main>
+<h1>Check the AI's answers</h1>
+<p class="muted">For each parcel (yellow outline), is the AI's land type right? Press <b>Agree</b> (A) or <b>Disagree</b> (D) and pick the right type,
+or <b>Can't tell</b> (C). <span id="notice"><b>About 1 in 10 answers shown is deliberately wrong</b> to confirm the check works; those are excluded from the results.</span>
+Each answer is saved immediately.</p>
+<p class="muted" id="progress"></p>
+<div class="layout">
+  <section class="card"><div class="map"><canvas id="canvas" width="768" height="768"></canvas><svg viewBox="0 0 768 768"><polygon id="shape"/></svg></div>
+    <p class="muted" id="photo"></p><p class="muted" id="links"></p></section>
+  <section class="card">
+    <p class="muted" id="meta"></p>
+    <p class="muted" style="margin:0">AI answer:</p><div class="answer" id="answer"></div><div class="comp" id="comp"></div>
+    <div class="row"><button class="yes" id="agree">Agree<kbd>A</kbd></button><button class="nob" id="disagree">Disagree<kbd>D</kbd></button><button id="unsure">Can't tell<kbd>C</kbd></button></div>
+    <input id="note" maxlength="300" placeholder="Optional comment (saved with your answer)" style="margin-top:12px">
+    <div id="fix" hidden><p class="muted">What is it really?</p><select id="correct"></select>
+      <div class="row"><button class="yes" id="saveFix">Save correction<kbd>Enter</kbd></button></div></div>
+    <p id="status" role="status"></p>
+    <div class="row"><button id="prev">← Back</button><button id="next">Skip →</button></div>
+  </section>
+</div></main>
+<script>
+const LABELS = __LABELS__;
+const SET = new URLSearchParams(location.search).get("set");
+let items = [], done = {}, i = 0;
+const $ = id => document.getElementById(id);
+const world = (lon, lat, z) => { const s = 256 * 2 ** z, r = lat * Math.PI / 180; return [(lon + 180) / 360 * s, (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * s]; };
+function draw(it) {
+  let z = it.photo.max_zoom;
+  for (; z > 15; z--) { const p = it.outline.map(([x, y]) => world(x, y, z)); const xs = p.map(q => q[0]), ys = p.map(q => q[1]);
+    if (Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) * 1.4 <= 768) break; }
+  const pts = it.outline.map(([x, y]) => world(x, y, z)), ctx = $("canvas").getContext("2d");
+  const cx = (Math.min(...pts.map(p => p[0])) + Math.max(...pts.map(p => p[0]))) / 2, cy = (Math.min(...pts.map(p => p[1])) + Math.max(...pts.map(p => p[1]))) / 2;
+  const ox = cx - 384, oy = cy - 384, token = Symbol(); draw.token = token; ctx.fillStyle = "#2a2f2c"; ctx.fillRect(0, 0, 768, 768);
+  for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + 767) / 256); tx++) for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + 767) / 256); ty++) {
+    const img = new Image(); img.onload = () => { if (draw.token === token) ctx.drawImage(img, tx * 256 - ox, ty * 256 - oy); };
+    img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}`; }
+  $("shape").setAttribute("points", pts.map(([x, y]) => `${(x - ox).toFixed(1)},${(y - oy).toFixed(1)}`).join(" "));
+}
+function show() {
+  const it = items[i], d = done[it.vid]; draw(it);
+  $("photo").textContent = `Photo ${it.photo.date} · ${it.photo.resolution_m} m · ${it.photo.provider || ""}`;
+  $("links").innerHTML = `<a target="_blank" rel="noopener" href="https://www.google.com/maps/@${it.lat},${it.lon},150m/data=!3m1!1e3">Google satellite</a> · <a target="_blank" rel="noopener" href="https://www.bing.com/maps?cp=${it.lat}~${it.lon}&lvl=19&style=a">Bing aerial</a>`;
+  $("meta").textContent = `${it.vid} · ${it.community || ""} · ${it.area_ha.toFixed(2)} ha`;
+  $("answer").textContent = `${it.shown_type} · ${LABELS[it.shown_type] || ""}`;
+  $("comp").textContent = it.shown_note || (it.shown_components.length > 1 ? "Parts seen: " + it.shown_components.map(c => LABELS[c] || c).join(", ") : "");
+  $("fix").hidden = true; $("note").value = d && d.note ? d.note : ""; $("status").textContent = d ? `Saved: ${d.verdict}${d.correct ? " → " + d.correct : ""}` : "";
+  $("progress").textContent = `${Object.keys(done).length} / ${items.length} checked · showing ${i + 1}`;
+}
+async function save(verdict, correct) {
+  const it = items[i], body = {set: SET, vid: it.vid, verdict, correct, note: $("note").value};
+  const r = await fetch("/api/verify/answer", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  if (!r.ok) { $("status").textContent = "Not saved: " + (await r.json()).error; return; }
+  done[it.vid] = body; $("note").value = ""; if (i < items.length - 1) i++; show();
+}
+$("agree").onclick = () => save("agree");
+$("unsure").onclick = () => save("cannot_tell");
+$("disagree").onclick = () => { $("fix").hidden = false; $("correct").focus(); };
+$("saveFix").onclick = () => { if ($("correct").value) save("disagree", $("correct").value); else $("status").textContent = "Choose the right type."; };
+$("prev").onclick = () => { if (i > 0) i--; show(); }; $("next").onclick = () => { if (i < items.length - 1) i++; show(); };
+$("correct").innerHTML = '<option value="">choose…</option>' + Object.entries(LABELS).filter(([k]) => k !== "TRE" && k !== "DEFER").map(([k, v]) => `<option value="${k}">${k} · ${v}</option>`).join("");
+document.addEventListener("keydown", e => { if (["INPUT", "SELECT"].includes(e.target.tagName)) { if (e.key === "Enter" && !$("fix").hidden) $("saveFix").click(); return; }
+  const k = e.key.toLowerCase(); if (k === "a") $("agree").click(); else if (k === "d") $("disagree").click(); else if (k === "c") $("unsure").click();
+  else if (e.key === "ArrowLeft") $("prev").click(); else if (e.key === "ArrowRight") $("next").click(); });
+Promise.all([fetch(`/api/verify?set=${SET}`).then(r => r.json()), fetch(`/api/verify/answers?set=${SET}`).then(r => r.json())])
+  .then(([v, a]) => { items = v.items; done = a;
+    if (v.labels) { Object.assign(LABELS, v.labels); $("correct").innerHTML = '<option value="">choose…</option>' + v.choices.map(k => `<option value="${k}">${v.labels[k] || k}</option>`).join(""); }
+    if (v.traps === false) $("notice").textContent = "There are no deliberately wrong answers in this set; add a comment whenever something is worth noting.";
+    const j = items.findIndex(x => !done[x.vid]); i = j >= 0 ? j : 0; show(); });
+</script></body></html>

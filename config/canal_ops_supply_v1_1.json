@@ -1,0 +1,11 @@
+{
+ "version": "canal_ops_supply_v1_1",
+ "frozen": "2026-11-01, owner decision 'Typical peak need' (replaces normal supply = sum of branch capacities from canal_ops_sim_v1 for the head supply only; everything else in config/canal_ops_sim_v1.json is unchanged)",
+ "basis": "zone_p90_head_need",
+ "definition": "Normal head supply for a calendar dekad = 90th percentile over 2021-2024 of the observed-zone gross need at the canal head for that same calendar dekad (net / field efficiency x head losses by distance). 2025 is never used (no hindsight).",
+ "percentile": 0.9,
+ "years": [2021, 2022, 2023, 2024],
+ "shutdown_months": [3],
+ "scenarios": "unchanged: normal 1.0, short20 0.8, short40 0.6",
+ "label": "Illustrative supply scenario: typical peak need of the observed zone (assumed)"
+}

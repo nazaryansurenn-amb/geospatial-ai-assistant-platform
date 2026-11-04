@@ -1,0 +1,513 @@
+{
+ "version": "cultivation_change_v2",
+ "created": "2026-11-01",
+ "source_of_rules": "docs/CULTIVATION_CHANGE_DOUBLE_CROP_STRATEGY_2026_11_01_EN.md: owner decisions + 'Agronomy expert, second review' + 'Remote-sensing expert, second review'; owner requirements 2026-11-01 (one rule for every year 2021-2026, two crops = two sowings AND two harvests in the same season, no winter/autumn sowing, strong confidence, land types v1.4)",
+ "frozen": true,
+ "frozen_note": "The calibrate step tunes ONLY the keys listed in yearly_state.free_limits on the calibration years, writes the chosen values into yearly_state.limits, sets frozen=true and records the calibration table. build refuses to run unless frozen; calibrate refuses to run once frozen.",
+ "inputs": {
+  "series_2021_2025": "data/analysis/observation_screening/transitions_area_20260906_v1",
+  "series_2026": "data/analysis/observation_screening/transitions_area_2026_v1",
+  "approved_area50": "data/analysis/activity_change/activity_change_area50_20260907_v1",
+  "land_types_v1_4": "server_data/review/alphaearth_photo_review_20261030_v1/releases/landtypes_v1_4/parcels.parquet"
+ },
+ "years": [
+  2021,
+  2022,
+  2023,
+  2024,
+  2025,
+  2026
+ ],
+ "series": {
+  "valid_fraction_min": 0.8,
+  "ndvi_valid_range": [
+   -1.0,
+   1.0
+  ],
+  "ndvi_out_of_range_rule": "EVERY row with NDVI outside [-1, 1] (or missing) is dropped before the cloud gate, the same way in every year 2021-2026; counts per year (all rows, rows passing the cloud gate, parcels, max value) go to summary.json and manifest.json",
+  "window_start": "01-01",
+  "window_end_inclusive": "11-01",
+  "window_note": "the same window and the same 1 November cut-off for every year 2021-2026 (2026 observed through 2026-11-01)"
+ },
+ "signal": {
+  "green_ndvi": 0.5,
+  "green_vegetation_fraction": 0.5,
+  "bare_ndvi": 0.25,
+  "green_definition": "a valid date with NDVI median >= green_ndvi and vegetation_fraction >= green_vegetation_fraction (>= 50% of the parcel)"
+ },
+ "yearly_state": {
+  "states": [
+   "cultivated",
+   "unclear",
+   "idle",
+   "unusable"
+  ],
+  "fixed": {
+   "min_valid_dates": 10,
+   "max_gap_days_may_aug": 30,
+   "gap_period": [
+    "05-01",
+    "08-31"
+   ],
+   "peak_min": 0.6,
+   "bare_start_ndvi": 0.25,
+   "spring_only_last_green_before": "06-01",
+   "spring_only_bare_before": "07-01",
+   "idle_window_jun_oct": [
+    "06-01",
+    "10-31"
+   ]
+  },
+  "rule": [
+   "unusable: < min_valid_dates valid dates in the window, or a valid-date gap > max_gap_days_may_aug days in May-August",
+   "cultivated: >= green_dates_min green dates spread over >= green_span_days_min days (first to last green date), peak NDVI >= peak_min, a bare start (a valid date with NDVI <= bare_start_ndvi before the first green date), then a harvest drop (NDVI falls by >= harvest_fall_min from the season peak after the last green date, within the window); a spring-only cycle (last green date before 1 June) needs a drop to bare (NDVI <= bare_ndvi) before 1 July, otherwise it is a spring flush = unclear (agronomy second review)",
+   "idle: not cultivated, no green date and no NDVI >= green_ndvi on any valid date (no cycle), NDVI < idle_max_ndvi_jun_oct on every valid date June-October, and vegetation_fraction (share of pixels with NDVI >= 0.30) < idle_max_vegetation_share on every valid date",
+   "unclear: everything else (spring flush only, a cycle without a bare start or without a harvest drop, weak green)"
+  ],
+  "free_limits": {
+   "green_dates_min": [
+    4,
+    5,
+    6,
+    7,
+    8
+   ],
+   "green_span_days_min": [
+    30,
+    45,
+    60
+   ],
+   "idle_max_ndvi_jun_oct": [
+    0.25,
+    0.28,
+    0.3,
+    0.33,
+    0.35
+   ],
+   "harvest_fall_min": [
+    0.2,
+    0.25,
+    0.3,
+    0.35
+   ],
+   "idle_max_vegetation_share": [
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    1.01
+   ]
+  },
+  "expert_values": {
+   "green_dates_min": 6,
+   "green_span_days_min": 30,
+   "idle_max_ndvi_jun_oct": 0.3,
+   "harvest_fall_min": 0.3,
+   "idle_max_vegetation_share": 1.01
+  },
+  "limits": {
+   "green_dates_min": 4,
+   "green_span_days_min": 30,
+   "idle_max_ndvi_jun_oct": 0.25,
+   "harvest_fall_min": 0.2,
+   "idle_max_vegetation_share": 0.2
+  },
+  "free_limits_note": "idle_max_vegetation_share was added before freezing (2026-11-01) after a dry run showed the approved layer marks many parcels 'partial' (part of the parcel green) that are idle at the parcel-median level; 1.01 = off (the experts' rule). It can only make 'idle' stricter."
+ },
+ "calibration": {
+  "calibration_years": [
+   2021,
+   2023
+  ],
+  "held_out_years": [
+   2022,
+   2024,
+   2025
+  ],
+  "reference": "approved area50 codes (register annual_state_codes; 1 active, 2 partial, 3 idle, 0 unusable): approved active = code 1, or code 2 passing passes_area50; approved idle = code 3; code 0 parcels have no reference and are left out; approved partial NOT passing the gate counts as disagreement for both shares (strict). Shares that also leave out partial-not-passing (the approved layer's own 'unclear') are reported as *_excl_partial for information only.",
+  "targets": {
+   "cultivated_in_approved_active_min": 0.97,
+   "idle_in_approved_idle_min": 0.95
+  },
+  "target_note": "each calibration year must reach both targets on its own",
+  "objective": "among limit sets reaching both targets in every calibration year: maximise the mean of (approved active called cultivated) and (approved idle called idle) over the calibration years; ties -> the smallest distance from expert_values. If NO limit set reaches the targets: take the set with the largest worst-case margin to the targets (closest to them), then the highest coverage, then the smallest distance from expert_values; record targets_met = false.",
+  "approved_layer_is_never_changed": true,
+  "record": {
+   "frozen_at": "2026-11-01T20:02:05",
+   "grid_size": 1500,
+   "feasible": 0,
+   "targets_met": false,
+   "chosen": {
+    "limits": {
+     "green_dates_min": 4,
+     "green_span_days_min": 30,
+     "idle_max_ndvi_jun_oct": 0.25,
+     "harvest_fall_min": 0.2,
+     "idle_max_vegetation_share": 0.2
+    },
+    "targets_met": false,
+    "coverage": 0.6438,
+    "distance_from_expert": 2.667,
+    "margin": -0.1017,
+    "per_year": {
+     "2021": {
+      "cultivated_in_approved_active": 0.9981,
+      "idle_in_approved_idle": 0.8483,
+      "cultivated_in_approved_active_excl_partial": 0.9992,
+      "idle_in_approved_idle_excl_partial": 0.9994,
+      "approved_active_called_cultivated": 0.6208,
+      "approved_idle_called_idle": 0.6427,
+      "n_cultivated": 10081,
+      "n_idle": 2076
+     },
+     "2023": {
+      "cultivated_in_approved_active": 0.9989,
+      "idle_in_approved_idle": 0.9891,
+      "cultivated_in_approved_active_excl_partial": 0.9996,
+      "idle_in_approved_idle_excl_partial": 1.0,
+      "approved_active_called_cultivated": 0.5546,
+      "approved_idle_called_idle": 0.757,
+      "n_cultivated": 8354,
+      "n_idle": 3563
+     }
+    }
+   },
+   "expert_values_result": {
+    "limits": {
+     "green_dates_min": 6,
+     "green_span_days_min": 30,
+     "idle_max_ndvi_jun_oct": 0.3,
+     "harvest_fall_min": 0.3,
+     "idle_max_vegetation_share": 1.01
+    },
+    "targets_met": false,
+    "coverage": 0.6688,
+    "distance_from_expert": 0.0,
+    "margin": -0.254,
+    "per_year": {
+     "2021": {
+      "cultivated_in_approved_active": 0.9993,
+      "idle_in_approved_idle": 0.696,
+      "cultivated_in_approved_active_excl_partial": 0.9997,
+      "idle_in_approved_idle_excl_partial": 0.969,
+      "approved_active_called_cultivated": 0.557,
+      "approved_idle_called_idle": 0.7872,
+      "n_cultivated": 9034,
+      "n_idle": 3099
+     },
+     "2023": {
+      "cultivated_in_approved_active": 0.9996,
+      "idle_in_approved_idle": 0.9197,
+      "cultivated_in_approved_active_excl_partial": 0.9999,
+      "idle_in_approved_idle_excl_partial": 0.9958,
+      "approved_active_called_cultivated": 0.4596,
+      "approved_idle_called_idle": 0.8715,
+      "n_cultivated": 6918,
+      "n_idle": 4411
+     }
+    }
+   },
+   "agreement": {
+    "2021": {
+     "cultivated_in_approved_active": 0.9981,
+     "idle_in_approved_idle": 0.8483,
+     "cultivated_in_approved_active_excl_partial": 0.9992,
+     "idle_in_approved_idle_excl_partial": 0.9994,
+     "approved_active_called_cultivated": 0.6208,
+     "approved_idle_called_idle": 0.6427,
+     "n_cultivated": 10081,
+     "n_idle": 2076,
+     "crosstab": {
+      "active": {
+       "cultivated": 10062,
+       "idle": 1,
+       "unclear": 6140,
+       "unusable": 4
+      },
+      "idle": {
+       "cultivated": 8,
+       "idle": 1761,
+       "unclear": 971,
+       "unusable": 0
+      },
+      "partial_not_passing": {
+       "cultivated": 11,
+       "idle": 314,
+       "unclear": 1977,
+       "unusable": 2
+      },
+      "unusable": {
+       "cultivated": 201,
+       "idle": 610,
+       "unclear": 740,
+       "unusable": 0
+      }
+     },
+     "role": "calibration"
+    },
+    "2023": {
+     "cultivated_in_approved_active": 0.9989,
+     "idle_in_approved_idle": 0.9891,
+     "cultivated_in_approved_active_excl_partial": 0.9996,
+     "idle_in_approved_idle_excl_partial": 1.0,
+     "approved_active_called_cultivated": 0.5546,
+     "approved_idle_called_idle": 0.757,
+     "n_cultivated": 8354,
+     "n_idle": 3563,
+     "crosstab": {
+      "active": {
+       "cultivated": 8345,
+       "idle": 0,
+       "unclear": 6645,
+       "unusable": 57
+      },
+      "idle": {
+       "cultivated": 3,
+       "idle": 3524,
+       "unclear": 798,
+       "unusable": 330
+      },
+      "partial_not_passing": {
+       "cultivated": 6,
+       "idle": 39,
+       "unclear": 1477,
+       "unusable": 27
+      },
+      "unusable": {
+       "cultivated": 140,
+       "idle": 666,
+       "unclear": 667,
+       "unusable": 78
+      }
+     },
+     "role": "calibration"
+    },
+    "2022": {
+     "cultivated_in_approved_active": 0.9987,
+     "idle_in_approved_idle": 0.6968,
+     "cultivated_in_approved_active_excl_partial": 0.9999,
+     "idle_in_approved_idle_excl_partial": 1.0,
+     "approved_active_called_cultivated": 0.4824,
+     "approved_idle_called_idle": 0.9713,
+     "n_cultivated": 7061,
+     "n_idle": 4232,
+     "crosstab": {
+      "active": {
+       "cultivated": 7052,
+       "idle": 0,
+       "unclear": 7568,
+       "unusable": 0
+      },
+      "idle": {
+       "cultivated": 1,
+       "idle": 2949,
+       "unclear": 86,
+       "unusable": 0
+      },
+      "partial_not_passing": {
+       "cultivated": 8,
+       "idle": 1283,
+       "unclear": 2301,
+       "unusable": 3
+      },
+      "unusable": {
+       "cultivated": 121,
+       "idle": 746,
+       "unclear": 684,
+       "unusable": 0
+      }
+     },
+     "role": "held_out"
+    },
+    "2024": {
+     "cultivated_in_approved_active": 0.9954,
+     "idle_in_approved_idle": 0.9963,
+     "cultivated_in_approved_active_excl_partial": 0.9968,
+     "idle_in_approved_idle_excl_partial": 1.0,
+     "approved_active_called_cultivated": 0.6132,
+     "approved_idle_called_idle": 0.451,
+     "n_cultivated": 10075,
+     "n_idle": 1622,
+     "crosstab": {
+      "active": {
+       "cultivated": 10029,
+       "idle": 0,
+       "unclear": 6325,
+       "unusable": 2
+      },
+      "idle": {
+       "cultivated": 32,
+       "idle": 1616,
+       "unclear": 1935,
+       "unusable": 0
+      },
+      "partial_not_passing": {
+       "cultivated": 14,
+       "idle": 6,
+       "unclear": 1287,
+       "unusable": 5
+      },
+      "unusable": {
+       "cultivated": 245,
+       "idle": 531,
+       "unclear": 775,
+       "unusable": 0
+      }
+     },
+     "role": "held_out"
+    },
+    "2025": {
+     "cultivated_in_approved_active": 0.9967,
+     "idle_in_approved_idle": 0.9949,
+     "cultivated_in_approved_active_excl_partial": 0.9976,
+     "idle_in_approved_idle_excl_partial": 0.9997,
+     "approved_active_called_cultivated": 0.5074,
+     "approved_idle_called_idle": 0.6531,
+     "n_cultivated": 7874,
+     "n_idle": 2926,
+     "crosstab": {
+      "active": {
+       "cultivated": 7848,
+       "idle": 1,
+       "unclear": 7615,
+       "unusable": 2
+      },
+      "idle": {
+       "cultivated": 19,
+       "idle": 2911,
+       "unclear": 1527,
+       "unusable": 0
+      },
+      "partial_not_passing": {
+       "cultivated": 7,
+       "idle": 14,
+       "unclear": 1305,
+       "unusable": 2
+      },
+      "unusable": {
+       "cultivated": 133,
+       "idle": 693,
+       "unclear": 725,
+       "unusable": 0
+      }
+     },
+     "role": "held_out"
+    }
+   }
+  }
+ },
+ "start_stop": {
+  "history_years": 3,
+  "first_assessable_year": 2024,
+  "started": "Y-3, Y-2, Y-1 idle and Y cultivated; confirmation: Y+1 cultivated -> 'confirmed_by_next_year'; Y+1 idle -> 'not_continued_next_year'; Y+1 unclear/unusable -> 'next_year_unclear'; Y = 2026 -> 'first_season_only'",
+  "stopped": "Y-3, Y-2, Y-1 cultivated and Y idle; 'confirmed' only if Y+1 is idle; Y+1 cultivated -> 'resumed in Y+1' (not cultivated in Y, not a stop); otherwise (or Y = 2026) 'provisional'",
+  "strong": {
+   "green_dates_min_started": 6,
+   "min_width_m": 20,
+   "no_alfalfa": true,
+   "land_codes": [
+    "ANN",
+    "NCU",
+    "CUN"
+   ],
+   "note": "strong = field land in v1.4 (Field land main class, not natural ground, not alfalfa), width >= 20 m; started also >= 6 green dates in Y (remote-sensing review) spread over >= 60 days (agronomy review: one crop season = NDVI >= 0.5 for >= 60 days; added 2026-11-01 before freezing after a dry run showed spring-flush starts green only mid-April to mid-May passing the state rule)",
+   "green_span_days_min_started": 60
+  },
+  "review_land_codes": [
+   "ANN",
+   "NCU",
+   "CUN",
+   "NAT",
+   "NCI"
+  ],
+  "alfalfa_stopped_class": "alfalfa_not_cut",
+  "land_code_note": "agronomy table (second review): started NCU/NCI/ANN with NAT -> review; stopped ANN with ALF -> 'alfalfa not cut' separately. v1.4 types describe the 2025 photo/season, so a field that stopped before 2025 is typed NCU and a field that started in 2026 is NCU; both are kept in the strong set as field land. NCI (not classifiable) and NAT stay review only."
+ },
+ "two_crops": {
+  "definition": "two sowings AND two harvests inside the same season (sowing year Y); a winter crop sown in autumn Y-1 and an autumn sowing in Y are never counted",
+  "cycle_detection": "3-date centred rolling median of valid NDVI; a cycle is a run of non-bare dates (smoothed NDVI > bare_ndvi) that contains smoothed NDVI >= green_ndvi; closed = a bare date on both sides inside the window",
+  "smoothing_window_dates": 3,
+  "strong": {
+   "exactly_two_cycles": true,
+   "winter_max_ndvi": 0.35,
+   "winter_window": "previous 1 Nov - end of February (previous Nov-Dec when the previous year's series exists)",
+   "first_bare_start_not_before": "02-15",
+   "green_up_1": [
+    "03-01",
+    "05-15"
+   ],
+   "peak_1_window": [
+    "04-20",
+    "06-30"
+   ],
+   "harvest_1_bare_by": "07-20",
+   "gap_bare_dates_min": 2,
+   "gap_days": [
+    7,
+    40
+   ],
+   "gap_bsi_above_both_peaks": true,
+   "green_up_2": [
+    "06-15",
+    "08-10"
+   ],
+   "green_up_2_after_bare_days_min": 10,
+   "peak_2_window": [
+    "08-01",
+    "10-31"
+   ],
+   "harvest_2_bare_by": "11-01",
+   "cycle_peak_min": 0.6,
+   "cycle_days_min": 60,
+   "cycle_green_dates_min": 3,
+   "harvest_fall_min": 0.35,
+   "max_valid_gap_days": 20,
+   "max_cut_events": 2,
+   "min_width_m": 20,
+   "inner_peak_min": 0.5,
+   "inner_dip_max": 0.3,
+   "inner_valid_fraction_min": 0.5,
+   "land_codes": [
+    "ANN"
+   ],
+   "no_alfalfa": true
+  },
+  "review_land_codes": [
+   "ANN",
+   "CUN",
+   "NCU"
+  ],
+  "multi_cycle": "3 or more cycles -> multi_cycle_review (never counted as two crops)",
+  "timing_note": "windows are the agronomy expert's (stricter) where both experts gave one; durations, peaks, gap density and inner-pixel checks are the remote-sensing expert's",
+  "second_harvest_not_seen": "cycle 2 still green on 1 November with green-up 2 inside green_up_2 -> second_harvest_not_seen (review; for 2026 = 'second crop still in the field'); a later green-up = autumn sowing, not counted; the same rule in every year"
+ },
+ "land_codes": {
+  "source": "land types v1.4 type6 (published, owner labels applied) with the photo-review code `type` and attrs_v11 used only to split NO_CROP and to flag alfalfa",
+  "ALF": "type6 FIELD_CROP and (type ALF or 'alfalfa' in attrs_v11)",
+  "ANN": "type6 FIELD_CROP otherwise (annual field crops)",
+  "CUN": "type6 CROPLAND_UNCERTAIN (field land, 2025 use not specified)",
+  "NAT": "type6 NO_CROP and type NAT or GRS (natural ground / grass)",
+  "NCU": "type6 NO_CROP otherwise (field land, no crop season in 2025)",
+  "NCI": "type6 missing (not classifiable from imagery)",
+  "PER": "type6 ORCHARD, VINEYARD or PERENNIAL",
+  "GRH": "type6 GREENHOUSE",
+  "NON": "type6 NON_FARM",
+  "UNC": "type6 UNCLASSIFIED",
+  "alfalfa_flag": "code ALF, or 'alfalfa' in attrs_v11, or any year with >= 2 cut events in the v1.4 cut history"
+ },
+ "exclusions": [
+  "household",
+  "road_excluded",
+  "PER",
+  "GRH",
+  "NON",
+  "UNC"
+ ],
+ "wording": {
+  "started": "Cultivation started in Y",
+  "stopped_confirmed": "Cultivation stopped in Y",
+  "stopped_other": "Not cultivated in Y",
+  "two_crops": "Two crops in Y",
+  "all": "Seen from satellite images; not checked on the ground."
+ }
+}

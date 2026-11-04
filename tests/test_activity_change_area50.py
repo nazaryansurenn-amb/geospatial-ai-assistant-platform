@@ -7,7 +7,7 @@ from wp_core.activity_change_history import transition, CLASSES
 
 
 def observation(date="2022-06-01", total=100, valid=100, fraction=.5, scene="a", **kw):
-    return {"cadastre_code": "04-002-0108-0037", "observation_date": date, "scene_id": scene,
+    return {"cadastre_code": "04-002-9108-0037", "observation_date": date, "scene_id": scene,
             "sampling_method": "pixel_center_10m", "quality_status": "usable",
             "parcel_pixel_count": total, "valid_pixel_count": valid, "vegetation_fraction": fraction, **kw}
 
