@@ -45,7 +45,7 @@ class ExcelExport(unittest.TestCase):
             table=cells(z,'xl/worksheets/sheet2.xml');detail=cells(z,'xl/worksheets/sheet3.xml')
             self.assertEqual(table['A2'],('inlineStr','=1+1'))
             self.assertEqual(table['D2'][1],None);self.assertEqual(detail['H2'][1],None)
-            self.assertEqual(detail['A2'],('inlineStr','04-001-0001-0001'))
+            self.assertEqual(detail['A2'],('inlineStr','04-001-9001-0001'))
             self.assertEqual(len(ET.fromstring(z.read('xl/drawings/charts/chart3.xml')).findall('.//c:numCache/c:pt',NS)),0)
 
     def test_history_summary_is_unique_and_empty_export_has_no_charts(self):

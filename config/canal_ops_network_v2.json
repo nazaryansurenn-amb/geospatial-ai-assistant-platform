@@ -1,0 +1,118 @@
+{
+ "version": "canal_ops_network_v2",
+ "frozen": "2026-11-02, before the first build, from the locked plan v6 (docs/IRRIGATION_AGENT_PLAN_V6_LOCKED_2026_11_02_EN.md sections 2, 2a, 2c). The terrain threshold, canal-level drops, sizing rule, minimum flows and main canal capacity were written here before any v2 result existed. Change only as a new version.",
+ "purpose": "Tree-shaped synthetic distribution network for canal_ops_sim_v1 on land types v1.5: the real Lower Hrazdan main canal with synthetic main-canal gates and pump stations, secondary canals with gates, tertiary canals with gates, and parcel groups. Not a hydraulic design, not the real WUA network.",
+ "inputs": {
+  "canal": "data/source/lower_hrazdan.geojson",
+  "communities": "data/source/wua_areas.geojson",
+  "land_types": "server_data/review/alphaearth_photo_review_20261030_v1/releases/landtypes_v1_5/parcels.parquet",
+  "cadastre": "data/source/cadastre/parcels_wua.gpkg",
+  "parcel_ids": "data/analysis/parcel_eo/current_halo_v1/current_parcels.parquet",
+  "terrain": "data/source/activity_2026/lower_hrazdan_eo_terrain_grid_2026.npz",
+  "terrain_meta": "data/source/activity_2026/lower_hrazdan_eo_terrain_grid_2026.json",
+  "demand_reference": "data/analysis/canal_ops_sim_v1/demand/capacity_reference_2021_2024.parquet",
+  "sim_config": "config/canal_ops_sim_v1.json",
+  "network_v1_parcels": "data/analysis/canal_ops_sim_v1/network/parcel_gate.parquet",
+  "network_v1_branches": "data/analysis/canal_ops_sim_v1/network/branches.parquet",
+  "ledger": "data/analysis/canal_ops_sim_v1/ledger_real.sqlite",
+  "not_used": "SQL archive and every archive-derived layer (point and layer tables, DWG, blocks): owner decision 2 of plan v6, not read at all"
+ },
+ "crs": "EPSG:32638",
+ "land_types": {
+  "farm_classes": ["FIELD_CROP", "NO_CROP", "CROPLAND_UNCERTAIN", "ORCHARD", "VINEYARD", "PERENNIAL", "GREENHOUSE"],
+  "not_served": {"NON_FARM": "not farm land", "UNCLASSIFIED": "type unknown (owner: can't tell)", "NOT_CLASSIFIABLE": "not classifiable (too small or narrow)"},
+  "ltype": {"FIELD_CROP": "field", "NO_CROP": "field", "CROPLAND_UNCERTAIN": "field", "ORCHARD": "orchard", "VINEYARD": "vineyard", "PERENNIAL": "perennial", "GREENHOUSE": "greenhouse"},
+  "zero_canal_demand": {"GREENHOUSE": "reached, no canal demand: greenhouse (possibly wells)"},
+  "reached_note": "Reached means a canal or pump can deliver to the parcel. It is not 'irrigated': greenhouses and parcels with no crop need have zero canal demand."
+ },
+ "locations": {
+  "fill_missing_from": "cadastral geometry representative point (always inside the parcel)",
+  "community_attach_max_m": 500,
+  "community_attach_rule": "community from land types v1.5; for parcels without one, the community outline containing the representative point, else the nearest outline within community_attach_max_m, else '(outside community outlines)'"
+ },
+ "main_canal": {
+  "capacity_lps": 12000,
+  "capacity_basis": "owner 2026-11-02: 12 m3/s at the Lower Hrazdan head, assumed design value",
+  "stages": {
+   "stage_1": {"label": "I", "upstream_end": "first"},
+   "stage_2": {"label": "II", "upstream_end": "last", "draws_through": "stage_1"}
+  },
+  "profile_step_m": 50,
+  "reference_radius_m": 45,
+  "sections": {"rule": "stage I is split where the cumulative served hectares of its offtakes reach half (upper / lower stage I); stage II is one section", "names": ["upper stage I", "lower stage I", "stage II"]},
+  "loss_pct_per_km": 0.5
+ },
+ "secondary_blocks": {
+  "chainage_window_m": 1500,
+  "min_ha": 115.0,
+  "min_ha_note": "0.8 l/s/ha x 1.10 x 115 ha = 101 l/s, so every secondary can open at the 100 l/s secondary minimum",
+  "max_merge_gap_windows": 1,
+  "merge_rule": "a (stage, side, window) group under min_ha joins the surviving upstream group on the same stage and side when at most max_merge_gap_windows apart; a small group with no upstream partner takes the next survivor downstream under the same limit; otherwise it stays a small secondary raised to the 100 l/s minimum (merging across longer gaps drew canals across the main canal in the first trial build)"
+ },
+ "outlets": {
+  "cell_m": 250,
+  "rule": "parcel groups = farm parcels of one secondary block, one 250 m grid cell and one community; outlet point = area-weighted centroid"
+ },
+ "tree": {
+  "method": "Euclidean minimum spanning tree (Prim, exact) over the outlet points of one secondary block plus its main-canal gate, rooted at the gate",
+  "root": "point on the main canal nearest to the block's outlet that lies closest to the canal",
+  "tertiary_cut_min_ha": 25.0,
+  "tertiary_max_ha": 60.0,
+  "long_link_m": 1500.0,
+  "long_link_rule": "a tree link longer than long_link_m (to a remote parcel cluster) always belongs to the secondary canal, never to a tertiary (a 6 km tertiary appeared in a trial build)",
+  "cut_rule": "post-order: an open subtree reaching tertiary_cut_min_ha (and at most tertiary_max_ha) becomes one tertiary canal whose gate sits on the secondary; every node with a cut or secondary descendant, or with more than tertiary_max_ha of its own, stays on the secondary; open subtrees between two secondary branches of a secondary node are packed in bearing order into tertiaries, and the node's own parcel group joins the smallest tertiary starting at that node (packed or cut from a child) that stays within tertiary_max_ha; a small leftover of single adjacent parcel groups, and a node's own group that fits nowhere, become direct outlets on the secondary",
+  "barriers": "no tree edge may cross the main canal or a canal of a block built earlier (blocks in key order); a forbidden edge is used only when no other way exists, and is counted",
+  "gate_position": "a tertiary canal starts at its secondary node; its gate is drawn gate_offset_m inside the tertiary along its first segment",
+  "gate_offset_m": 25.0,
+  "escape_offset_m": 30.0,
+  "max_levels": "main canal -> main gate or pump -> secondary canal -> secondary gate or pump -> tertiary canal -> tertiary gate -> parcels (direct outlets sit on the secondary canal)"
+ },
+ "terrain": {
+  "decision_unit": "tertiary block (gate cluster) or direct outlet; never a single parcel",
+  "uncertain_band_m": 3.0,
+  "uncertain_band_basis": "+-3 m as in wp_core/land_potential.py, fixed here before the first build",
+  "canal_level": "canal terrain profile (median within reference_radius_m every profile_step_m) made non-increasing downstream (running minimum); stage II starts at most at the end level of stage I",
+  "drop_per_gate_m": 0.3,
+  "drop_per_km_ditch_m": 0.5,
+  "main_pump_rule": "the main offtake is a pump station when the area-weighted median parcel terrain of the outlets within main_pump_head_m of the gate (along the secondary; else the outlet nearest the gate) lies more than uncertain_band_m above the level at the gate",
+  "main_pump_head_m": 1000.0,
+  "states": ["gravity", "pumping", "terrain uncertain", "terrain not covered"],
+  "label": "terrain screening, synthetic",
+  "no_head_figures": "terrain differences and canal levels are used inside the build only and are never written to outputs"
+ },
+ "pumps": {
+  "unit_lps": [25, 50, 100, 200, 400],
+  "max_units": 4,
+  "unit_rule": "smallest unit size with at most max_units whole units covering the station capacity",
+  "run_windows": ["23:00-07:00"],
+  "run_windows_basis": "night-tariff window, assumed",
+  "override": null,
+  "override_note": "a real pump list ({node, kind: pump|gate, units, unit_lps}) replaces the terrain rule for the listed nodes; ids are kept",
+  "label": "terrain screening, synthetic"
+ },
+ "sizing": {
+  "rule": "capacity = max(P90 of the 2021-2024 dekad gross need incl. downstream losses, 0.8 l/s/ha x irrigable ha) x 1.10, one rule at every level",
+  "floor_lps_per_ha": 0.8,
+  "headroom": 1.1,
+  "percentile": 0.9,
+  "need_column": "net_m3_full_exp",
+  "need_basis": "demand v1 reference 2021-2024 (built on land types v1.4); classes without canal demand on v1.5 count zero; refreshed when demand is rebuilt on v1.5 (plan 2c demand)",
+  "efficiency": "field_efficiency of config/canal_ops_sim_v1.json by ltype (assumed)",
+  "loss_pct_per_km": {"secondary": 2.0, "tertiary": 3.0},
+  "loss_band_pct_per_km": {"secondary": [1.5, 3.0], "tertiary": [2.0, 4.0]},
+  "rounding_lps": {"main": 10, "secondary": 10, "tertiary": 1, "outlet": 1},
+  "flow_class_min_open_lps": {"secondary": 100, "tertiary": 20},
+  "min_open_share": 0.3,
+  "tertiary_stream_lps": [20, 60],
+  "flow_classes": "gates and pumps on the main canal and the secondary canals they feed are class 'secondary'; gates and pumps on secondary canals, the tertiary canals they feed and direct outlets are class 'tertiary'; tertiary gates are class 'outlet'",
+  "rotation_note": "a parent carries its rotating children's flow: its capacity comes from its own aggregate need, not the sum of its children's capacities"
+ },
+ "qa": {"ha_total": 10339.3, "ha_tolerance": 0.01},
+ "labels": {
+  "network": "Synthetic tree network: real main canal, synthetic gates, pump stations, secondary and tertiary canals",
+  "zone": "Lower Hrazdan observed zone, stages I and II",
+  "terrain": "terrain screening, synthetic",
+  "capacity": "demand-derived estimate, not design capacity",
+  "main_capacity": "12 m3/s, assumed design value (owner)"
+ }
+}

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Land Types v1.4</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+:root{--bg:#f4f5f2;--card:#ffffff;--ink:#1d2a24;--muted:#5d6b64;--line:#dde3de;--accent:#176b56}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a17;--card:#1d2420;--ink:#e6ece8;--muted:#a3b0a9;--line:#2e3833;--accent:#5cc2a0}}
+:root[data-theme="dark"]{--bg:#141a17;--card:#1d2420;--ink:#e6ece8;--muted:#a3b0a9;--line:#2e3833;--accent:#5cc2a0}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,"Segoe UI",sans-serif}
+#map{position:absolute;inset:0}
+.banner{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:2;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font-size:13px;color:var(--muted);max-width:calc(100% - 32px);text-align:center}
+.panel{position:absolute;top:56px;left:16px;z-index:2;width:300px;max-height:calc(100% - 80px);overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px}
+.panel h1{font-size:16px;margin:0 0 8px}.panel h2{font-size:13px;margin:12px 0 6px;color:var(--muted);font-weight:600}
+.row{display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer}.row input{margin:0}
+.sw{width:16px;height:16px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.25)}
+.num{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;white-space:nowrap}
+input[type=range]{width:100%}button{font:inherit;padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.toggle{display:none}
+.maplibregl-popup-content{color:#1d2a24;font:14px/1.4 system-ui,"Segoe UI",sans-serif;max-width:280px}
+.maplibregl-popup-content b{font-weight:650}.pop small{color:#5d6b64}.pop a{color:#176b56}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;border:1px solid #fff}
+#status{font-size:13px;color:var(--muted)}
+@media (max-width:700px){.panel{top:auto;bottom:0;left:0;width:100%;max-height:45%;border-radius:12px 12px 0 0}.panel.closed .body{display:none}
+  .toggle{display:inline-block;float:right}.banner{top:8px;left:16px;right:56px;transform:none;max-width:none;font-size:12px}}
+</style></head><body>
+<div id="map"></div>
+<div class="banner">Land types v1.4 (frozen) · AI-interpreted from imagery + owner labels · not field-verified</div>
+<div class="panel" id="panel">
+  <button class="toggle" id="toggle">Hide</button>
+  <h1>Land types v1.4</h1>
+  <div class="body">
+    <div id="status">Loading parcels…</div>
+    <h2>Types (parcels · official ha)</h2><div id="legend"></div>
+    <h2>Marks</h2>
+    <label class="row"><input type="checkbox" id="oldOn" checked><span class="sw" id="oldSw"></span>Vineyard / orchard seen only on 2021-22 photos</label>
+    <label class="row"><input type="checkbox" id="ownerOn" checked><span class="sw" style="background:transparent;border:3px solid #fff;outline:1px solid #888"></span>Your label (your answer wins)</label>
+    <label class="row"><input type="checkbox" id="guessOn"><span class="sw" style="background:repeating-linear-gradient(90deg,#f2c230 0 4px,#9b4fd1 4px 8px);opacity:.45"></span>AI best guess on unclassified parcels</label>
+    <div style="font-size:12px;color:var(--muted);padding-left:24px">Not a result: about 2 in 3 right, weaker for no crop / not farmland. Never in totals.</div>
+    <label class="row"><input type="checkbox" id="candOn"><span class="sw" style="background:#4f9a8c;border:2px dashed #fff"></span>v1.2 candidates not adopted <span class="num" id="candNum"></span></label>
+    <div style="font-size:12px;color:var(--muted);padding-left:24px">Group B (block review next to perennials): one answer short of the bar; not on the map. Dashed outline.</div>
+    <label class="row"><input type="checkbox" id="checkOn" checked><span class="sw" style="border-radius:50%;background:#16a3a3"></span>Your check answers <span class="num" id="checkNum"></span></label>
+    <div style="font-size:13px;color:var(--muted);padding-left:24px"><span class="dot" style="background:#16a3a3"></span>same type <span class="dot" style="background:#d93025;margin-left:8px"></span>different <span class="dot" style="background:#9aa0a6;margin-left:8px"></span>can't tell</div>
+    <h2>Colour strength</h2><input type="range" id="opacity" min="0" max="100" value="55">
+    <div style="margin-top:10px"><button id="refresh">Refresh check answers</button></div>
+  </div>
+</div>
+<script>
+const TYPES = [
+  ["FIELD_CROP", "Field crops", "#f2c230"], ["NO_CROP", "No crop in 2025", "#e9dcbc"], ["VINEYARD", "Vineyard", "#9b4fd1"],
+  ["ORCHARD", "Orchard", "#2fa84f"], ["GREENHOUSE", "Greenhouse", "#56c6f0"], ["NON_FARM", "Not farmland", "#8d949b"],
+  ["UNCLASSIFIED", "Unclassified (evidence unclear)", null], ["NCI", "Not classifiable (too small / narrow)", null],
+  ["PERENNIAL", "Type not specified", "#4f9a8c"], ["CROPLAND_UNCERTAIN", "2025 use not specified", "#d8b65a"]];
+// owner's two-level legend (Addendum 4): main class -> sub-classes
+const GROUPS = [["Perennial plantings (Բազմամյա տնկարկ)", ["ORCHARD", "VINEYARD", "PERENNIAL"]],
+  ["Field land", ["FIELD_CROP", "NO_CROP", "CROPLAND_UNCERTAIN"]], [null, ["GREENHOUSE", "NON_FARM", "UNCLASSIFIED", "NCI"]]];
+const NAME = Object.fromEntries(TYPES.map(t => [t[0], t[1]])), COLOR = Object.fromEntries(TYPES.map(t => [t[0], t[2]]));
+NAME.PERENNIAL = "Perennial planting, type not specified"; NAME.CROPLAND_UNCERTAIN = "Field land, 2025 use not specified";
+const visible = new Set(TYPES.map(t => t[0]));
+const $ = id => document.getElementById(id);
+let data, check = {};
+
+const map = new maplibregl.Map({container: "map", center: [44.3, 40.13], zoom: 11, maxZoom: 19, attributionControl: {compact: true},
+  style: {version: 8, sources: {sat: {type: "raster", tileSize: 256, maxzoom: 19, attribution: "Imagery © Esri, Maxar, Earthstar Geographics",
+    tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"]}},
+    layers: [{id: "sat", type: "raster", source: "sat"}]}});
+map.addControl(new maplibregl.NavigationControl({showCompass: false}), "top-right");
+
+function stripes(color) {
+  const c = document.createElement("canvas"); c.width = c.height = 12; const x = c.getContext("2d");
+  x.strokeStyle = color; x.lineWidth = 3; x.beginPath(); x.moveTo(-3, 15); x.lineTo(15, -3); x.moveTo(-3, 3); x.lineTo(3, -3); x.moveTo(9, 15); x.lineTo(15, 9); x.stroke();
+  return x.getImageData(0, 0, 12, 12);
+}
+const colorExpr = ["match", ["get", "t"], ...TYPES.filter(t => t[2]).flatMap(t => [t[0], t[2]]), "#ffffff"];
+const typeFilter = () => ["in", ["get", "t"], ["literal", [...visible]]];
+function applyFilters() {
+  const old = $("oldOn").checked, f = typeFilter();
+  map.setFilter("fill", old ? ["all", f, ["!", ["get", "old"]]] : f);
+  map.setFilter("old", ["all", f, ["get", "old"]]); map.setLayoutProperty("old", "visibility", old ? "visible" : "none");
+  map.setFilter("outline", ["all", f, ["!=", ["get", "t"], "NCI"]]); map.setFilter("nci", ["all", f, ["==", ["get", "t"], "NCI"]]);
+  map.setFilter("hit", f); map.setFilter("owner", ["all", f, ["get", "owner"]]);
+  map.setLayoutProperty("owner", "visibility", $("ownerOn").checked ? "visible" : "none");
+  map.setLayoutProperty("check", "visibility", $("checkOn").checked ? "visible" : "none");
+  map.setLayoutProperty("guess", "visibility", $("guessOn").checked && visible.has("UNCLASSIFIED") ? "visible" : "none");
+  const cf = ["in", ["coalesce", ["get", "c12"], ""], ["literal", [...visible]]];
+  map.setFilter("cand", cf); map.setFilter("candline", cf);
+  for (const id of ["cand", "candline"]) map.setLayoutProperty(id, "visibility", $("candOn").checked ? "visible" : "none");
+}
+function setOpacity() {
+  const o = $("opacity").value / 100;
+  map.setPaintProperty("fill", "fill-opacity", ["match", ["get", "t"], ["UNCLASSIFIED", "NCI"], 0, o]);
+  map.setPaintProperty("old", "fill-opacity", Math.min(1, o + .2));
+  map.setPaintProperty("cand", "fill-opacity", o);
+}
+function center(g) {
+  let a = [180, 90, -180, -90]; const walk = c => typeof c[0] === "number" ? (a = [Math.min(a[0], c[0]), Math.min(a[1], c[1]), Math.max(a[2], c[0]), Math.max(a[3], c[1])]) : c.forEach(walk);
+  walk(g.coordinates); return [(a[0] + a[2]) / 2, (a[1] + a[3]) / 2];
+}
+async function loadCheck() {
+  check = await fetch("/api/check").then(r => r.json());
+  const pts = data.features.filter(f => check[f.properties.id]).map(f => ({type: "Feature", geometry: {type: "Point", coordinates: center(f.geometry)},
+    properties: {id: f.properties.id, v: check[f.properties.id].verdict}}));
+  map.getSource("check").setData({type: "FeatureCollection", features: pts});
+  const n = data.features.filter(f => f.properties.vid).length;
+  $("checkNum").textContent = `${pts.length} / ${n}`;
+}
+function legend() {
+  const agg = {}, cand = {}, add = (o, k, ha) => { o[k] = o[k] || [0, 0]; o[k][0]++; o[k][1] += ha; };
+  for (const f of data.features) { const p = f.properties; add(agg, p.t, p.ha); if (p.c12) add(cand, p.c12, p.ha); }
+  const nCand = Object.values(cand).reduce((a, b) => a + b[0], 0);
+  $("candNum").textContent = nCand.toLocaleString();
+  const rowHtml = (k, sub) => { const [, n, c] = TYPES.find(t => t[0] === k), a = agg[k], cd = cand[k];
+    const sw = c ? `background:${c}` : k === "NCI" ? "background:transparent;border:1px dashed #bbb" : "background:transparent;border:2px solid #fff;outline:1px solid #888";
+    const num = (a ? `${a[0].toLocaleString()} · ${Math.round(a[1]).toLocaleString()}` : "") + (cd ? `${a ? "<br>" : ""}+${cd[0].toLocaleString()} cand.` : "");
+    return `<label class="row" style="${sub ? "padding-left:14px" : ""}"><input type="checkbox" data-k="${k}" ${visible.has(k) ? "checked" : ""}>
+      <span class="sw" style="${sw}"></span>${n}<span class="num" style="text-align:right">${num}</span></label>`; };
+  $("legend").innerHTML = GROUPS.map(([head, ks]) => (head ? `<div style="font-weight:650;margin-top:6px">${head}</div>` : `<div style="margin-top:6px"></div>`)
+    + ks.map(k => rowHtml(k, !!head)).join("")).join("");
+  $("legend").querySelectorAll("input").forEach(i => i.onchange = () => { i.checked ? visible.add(i.dataset.k) : visible.delete(i.dataset.k); applyFilters(); });
+}
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+function popup(f, lngLat) {
+  const p = f.properties, c = check[p.id], [lon, lat] = center(f.geometry);
+  const notes = (p.notes || "").split("; ").filter(Boolean);
+  let h = `<div class="pop"><b>${esc(NAME[p.t] || p.t)}</b><br><small>${esc(p.src || "")}${p.conf && !p.owner ? " · AI confidence " + esc(p.conf) : ""}</small>`;
+  if (p.c12) h += `<br>v1.2 candidate (not yet checked): <b>${esc(NAME[p.c12] || p.c12)}</b> <small>(rule ${esc(p.g12)})</small>`;
+  if (p.hint) h += `<br>AI's best guess: ${esc(NAME[p.hint] || p.hint)} <small>(about 2 in 3 right)</small>`;
+  if (notes.length) h += `<br><small>${notes.map(esc).join("<br>")}</small>`;
+  if (c) h += `<br>Your check: <b>${c.verdict === "agree" ? "same type" : c.verdict === "disagree" ? "you said " + esc(NAME[c.owner_type] || c.owner_type) : "can't tell"}</b>${c.comment ? "<br><small>“" + esc(c.comment) + "”</small>" : ""}`;
+  else if (p.vid) h += `<br><small>In your check (${esc(p.vid)}), not answered yet</small>`;
+  h += `<br><small>${p.ha.toFixed(2)} ha · ${esc(p.com)}${p.photo ? " · photo " + esc(p.photo) : ""}</small>
+    <br><a target="_blank" rel="noopener" href="https://www.google.com/maps/@${lat},${lon},150m/data=!3m1!1e3">Google satellite</a> · <a target="_blank" rel="noopener" href="https://www.bing.com/maps?cp=${lat}~${lon}&lvl=19&style=a">Bing aerial</a></div>`;
+  new maplibregl.Popup({maxWidth: "300px"}).setLngLat(lngLat).setHTML(h).addTo(map);
+}
+// start once the style is ready; "load" also waits for every satellite tile, which can be slow
+let started = false;
+const start = () => { if (!started && map.isStyleLoaded()) { started = true; init(); } };
+const wait = setInterval(() => { start(); if (started) clearInterval(wait); }, 200);
+async function init() {
+  map.addImage("stripe-VINEYARD", stripes(COLOR.VINEYARD)); map.addImage("stripe-ORCHARD", stripes(COLOR.ORCHARD));
+  data = await fetch("/data/parcels.geojson").then(r => r.json());
+  map.addSource("p", {type: "geojson", data, promoteId: "id"});
+  map.addSource("check", {type: "geojson", data: {type: "FeatureCollection", features: []}});
+  map.addLayer({id: "fill", type: "fill", source: "p", paint: {"fill-color": colorExpr}});
+  map.addLayer({id: "old", type: "fill", source: "p", paint: {"fill-pattern": ["concat", "stripe-", ["get", "t"]]}});
+  map.addLayer({id: "guess", type: "fill", source: "p", filter: ["all", ["==", ["get", "t"], "UNCLASSIFIED"], ["has", "hint"], ["!=", ["get", "hint"], null]],
+    paint: {"fill-color": ["match", ["coalesce", ["get", "hint"], ""], ...TYPES.filter(t => t[2]).flatMap(t => [t[0], t[2]]), "#ffffff"], "fill-opacity": 0.28}});
+  map.addLayer({id: "cand", type: "fill", source: "p", paint: {"fill-color": ["match", ["coalesce", ["get", "c12"], ""], ...TYPES.filter(t => t[2]).flatMap(t => [t[0], t[2]]), "#ffffff"]}});
+  map.addLayer({id: "candline", type: "line", source: "p", paint: {"line-color": "#ffffff", "line-dasharray": [2, 1.5], "line-width": ["interpolate", ["linear"], ["zoom"], 11, .4, 16, 1.5]}});
+  map.addLayer({id: "hit", type: "fill", source: "p", paint: {"fill-color": "#000", "fill-opacity": 0.01}});
+  map.addLayer({id: "outline", type: "line", source: "p", paint: {"line-color": ["match", ["get", "t"], "UNCLASSIFIED", "#ffffff", colorExpr],
+    "line-width": ["interpolate", ["linear"], ["zoom"], 11, .3, 15, 1, 18, 2]}});
+  map.addLayer({id: "nci", type: "line", source: "p", paint: {"line-color": "#dddddd", "line-dasharray": [2, 2], "line-width": ["interpolate", ["linear"], ["zoom"], 11, .2, 16, 1]}});
+  map.addLayer({id: "owner", type: "line", source: "p", paint: {"line-color": "#ffffff", "line-width": ["interpolate", ["linear"], ["zoom"], 11, 1, 16, 3.5]}});
+  map.addLayer({id: "check", type: "circle", source: "check", paint: {"circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 3, 16, 7],
+    "circle-color": ["match", ["get", "v"], "agree", "#16a3a3", "disagree", "#d93025", "#9aa0a6"], "circle-stroke-color": "#fff", "circle-stroke-width": 1.5}});
+  legend(); applyFilters(); setOpacity(); await loadCheck();
+  const b = [180, 90, -180, -90]; data.features.forEach(f => { const [x, y] = center(f.geometry); b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); });
+  map.fitBounds([[b[0], b[1]], [b[2], b[3]]], {padding: 40, duration: 0});
+  $("status").textContent = `${data.features.length.toLocaleString()} parcels · click one for details`;
+  map.on("click", "hit", e => popup(e.features[0], e.lngLat));
+  map.on("mouseenter", "hit", () => map.getCanvas().style.cursor = "pointer"); map.on("mouseleave", "hit", () => map.getCanvas().style.cursor = "");
+  setInterval(loadCheck, 30000);
+}
+$("oldSw").style.background = "repeating-linear-gradient(135deg,#9b4fd1 0 3px,transparent 3px 6px)";
+["oldOn", "ownerOn", "checkOn", "guessOn", "candOn"].forEach(id => $(id).onchange = applyFilters);
+$("opacity").oninput = setOpacity; $("refresh").onclick = loadCheck;
+$("toggle").onclick = () => { $("panel").classList.toggle("closed"); $("toggle").textContent = $("panel").classList.contains("closed") ? "Show" : "Hide"; };
+</script></body></html>

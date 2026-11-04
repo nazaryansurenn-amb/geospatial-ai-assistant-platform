@@ -19,8 +19,16 @@
 /server_data/review/irrigation_stress_review_20260907_v1/*
 !/server_data/review/irrigation_stress_review_20260907_v1/frontend_source/
 
-# --- Private notes and local launchers ---
+# --- Private notes, working-session files and local launchers ---
 /AGENTS.md
+/CLAUDE.md
+.claude/
+/ROLLBACK.md
+/docs/HANDOVER_*
+/docs/PLAN_*
+/docs/OWNER_*
+/config/canal_ops_payload_approval.json
+/config/archive_names*.txt
 /docs/reference/
 /docs/CAREER_*
 *_RU.md

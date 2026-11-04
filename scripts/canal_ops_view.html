@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Irrigation Assistant</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+:root{--bg:#f4f1ea;--panel:#fffdf8;--ink:#1d2a24;--muted:#5d6b64;--line:#ddd6c8;--accent:#176b56;--warn:#a2401c}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,"Segoe UI",sans-serif}
+button,select,input{font:inherit}
+#app{display:grid;grid-template-columns:minmax(0,1fr) 460px;grid-template-rows:auto auto minmax(0,1fr);height:100%}
+#banner{grid-column:1/3;background:#21332b;color:#f3efe4;padding:8px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px}
+#banner b{font-size:15px}.sp{flex:1}
+#lang button{min-height:44px;min-width:44px;background:none;border:1px solid #6f8579;color:#f3efe4;border-radius:6px;cursor:pointer}
+#lang button.on{background:#f3efe4;color:#21332b}
+#notbox{grid-column:1/3;background:#fbefe6;border-bottom:1px solid #e6cdb9;color:var(--warn);padding:6px 16px;font-size:13px}
+#left{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line)}
+#controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+#controls select,#controls button{min-height:44px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 12px}
+#controls .scen button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+#run{background:var(--accent)!important;color:#fff;border-color:var(--accent)!important;font-weight:600}
+#schem{flex:1;min-height:0;overflow:auto;padding:12px 16px}
+#schem svg{width:100%;height:auto;min-width:560px}
+#schem.map{padding:0;overflow:hidden;position:relative}#map{width:100%;height:100%;min-height:420px}
+.maplibregl-popup-content{color:#1d2a24;font:13px/1.35 system-ui,"Segoe UI",sans-serif;padding:10px 12px}
+.pop b{display:block;font-size:14px;padding-right:14px}.pop>small{display:block;color:var(--muted);margin-bottom:4px}
+.pop table{font-size:12px}.pop th{font-weight:600;padding:2px 6px 2px 0;border:none;vertical-align:top}.pop td{padding:2px 0;border:none}
+.pop .askbtn{margin-top:8px;min-height:40px;width:100%;border:none;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;font-weight:600}
+.pop small.sim{display:block;margin-top:6px;color:var(--warn);font-size:11px}
+.maplibregl-popup{z-index:3}
+.mapbtn{position:absolute;top:10px;left:10px;z-index:2;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.mappanel{display:none;position:absolute;top:56px;left:10px;bottom:30px;z-index:2;width:290px;max-width:calc(100% - 20px);overflow-y:auto;overflow-x:hidden;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;box-shadow:0 2px 10px rgba(0,0,0,.3);font-size:13px}
+.mappanel.open{display:block}
+.lp-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.lp-x{min-width:40px;min-height:40px;border:none;background:none;font-size:22px;cursor:pointer;color:var(--muted)}
+.lp-row{display:flex;align-items:center;gap:6px;padding:5px 0;cursor:pointer;line-height:1.25}
+.lp-row input{width:18px;height:18px;margin:0;flex:none}.lp-row>span{min-width:0;overflow-wrap:anywhere}.lg-c{overflow-wrap:anywhere}.lp-row.dim span{color:#9aa49f}.lp-row .mz{color:var(--warn);white-space:nowrap}
+.lp-row.dim .mz{color:var(--warn)}.lp-row:not(.dim) .mz{display:none}
+.sw{flex:none}.sw.multi{background:linear-gradient(90deg,#f2c230 0 33%,#2fa84f 33% 66%,#9b4fd1 66%)}
+.swl{flex:none;display:inline-block;width:16px;height:0;vertical-align:middle}#schem .sws{flex:none;width:14px;height:14px;min-width:0}
+.lg{margin:0 0 4px 26px;font-size:12px}.lg-h{font-weight:600;margin-top:4px}.lg-c{display:flex;align-items:center;gap:4px;padding:1px 0}
+.lp-src{font-size:11px;color:var(--muted);margin:8px 0 0}
+.mapchip{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);z-index:1;background:rgba(29,42,36,.85);color:#fff;font-size:12px;padding:5px 10px;border-radius:14px;max-width:calc(100% - 20px);text-align:center;pointer-events:none}
+.mlabel{color:#fff;font:600 12px system-ui,"Segoe UI",sans-serif;text-shadow:0 0 3px #000,0 0 2px #000;pointer-events:none;white-space:nowrap}
+.mlabel.node{font-size:11px;color:#e3f2fd}
+#q.ctx{outline:3px solid var(--accent)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);padding:6px 16px 8px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+#right{display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+#tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:thin}
+#tabs button{flex:1 0 auto;min-height:46px;border:none;background:none;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap;padding:0 10px}
+#tabs button.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.pane{display:none;flex:1;min-height:0;overflow:auto;padding:12px 16px}.pane.on{display:block}
+#chatpane.on{display:flex;flex-direction:column;padding:0}
+#msgs{flex:1;overflow:auto;padding:12px 16px}
+.msg{margin:8px 0;padding:9px 12px;border-radius:10px;max-width:92%}
+.me{background:#e8f1ec;margin-left:auto}.bot{background:#fff;border:1px solid var(--line)}
+.bot small{display:block;color:var(--muted);margin-top:6px}
+details{margin-top:6px;font-size:13px;color:var(--muted)}
+.alt{margin-top:6px;min-height:44px;border:1px solid var(--accent);color:var(--accent);background:#fff;border-radius:8px;padding:0 12px;cursor:pointer}
+#sugg{display:flex;gap:6px;flex-wrap:wrap;padding:8px 16px;border-top:1px solid var(--line)}
+#sugg button{min-height:44px;border:1px solid var(--line);background:#fff;border-radius:20px;padding:0 12px;cursor:pointer;font-size:13px}
+#ask{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--line)}
+#ask input{flex:1;min-width:0;min-height:44px;border:1px solid var(--line);border-radius:8px;padding:0 12px}
+#ask button{min-height:44px;min-width:72px;border:none;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);padding:5px 4px}
+td{padding:6px 4px;border-bottom:1px solid #eee7da}.num{text-align:right;font-variant-numeric:tabular-nums}
+.card{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;margin:10px 0}
+.card.approve{border-color:var(--accent)}
+.card button{min-height:44px;border-radius:8px;padding:0 14px;cursor:pointer;margin-right:6px}
+.btn-main{background:var(--accent);color:#fff;border:none}.btn-sec{background:#fff;border:1px solid var(--line)}
+.muted{color:var(--muted);font-size:13px}.warn{color:var(--warn)}
+#mobiletoggle{display:none}
+.pl-form{display:flex;flex-direction:column;gap:8px}
+.pl-form label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--muted)}
+.pl-form input,.pl-form select{min-height:44px;border:1px solid var(--line);border-radius:8px;padding:0 10px;background:#fff;color:var(--ink);width:100%}
+.pl-row{display:flex;gap:8px;flex-wrap:wrap}.pl-row>label{flex:1;min-width:140px}
+.pl-kpi{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:8px 0}
+.pl-kpi div{background:#f4f1ea;border-radius:8px;padding:8px}.pl-kpi b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.pl-kpi span{font-size:12px;color:var(--muted)}
+.pl-btns{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.pl-btns button{min-height:44px;border-radius:8px;padding:0 12px;cursor:pointer}
+#planbar{padding:6px 16px 10px;background:var(--panel);border-top:1px solid var(--line);font-size:12px}
+#planbar input[type=range]{width:100%;min-height:32px}
+#planbar .pb-top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#planbar .pb-leg{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);margin-top:2px}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:4px;vertical-align:-1px;border:1px solid #fff;box-shadow:0 0 0 1px #999}
+.pl-scroll{overflow-x:auto}
+@media (max-width:860px){
+  #app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto minmax(0,1fr)}
+  #banner,#notbox{grid-column:1}
+  #mobiletoggle{display:flex;gap:6px;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--line)}
+  #mobiletoggle button{flex:1;min-height:44px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  #mobiletoggle button.on{background:var(--accent);color:#fff}
+  #left,#right{display:none;border-right:none}
+  #left.show,#right.show{display:flex}
+  #schem svg{min-width:0}
+  #map{min-height:240px}
+  .pop small.sim{display:none}.pop table{font-size:11px}.pop th,.pop td{padding:1px 4px 1px 0}
+  .pop b{font-size:13px}.pop .askbtn{margin-top:6px}.maplibregl-popup-content{padding:8px 10px}
+  #controls{padding:8px 12px;gap:6px}
+  #planbar{padding:4px 12px 6px}#planbar .pb-top .muted{display:none}   /* the map's own simulation line stays above */
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="banner"><b data-t="title"></b><span id="mode"></span><span class="sp"></span>
+    <span id="lang"><button data-l="hy">ՀԱՅ</button> <button data-l="en">EN</button> <button data-l="ru">РУ</button></span></div>
+  <div id="notbox" data-t="what_not"></div>
+  <div id="mobiletoggle"><button id="mNet" data-t="map_toggle"></button><button id="mChat" class="on" data-t="chat_toggle"></button></div>
+  <div id="left">
+    <div id="controls">
+      <label><span class="muted" data-t="dekad"></span> <select id="period"></select></label>
+      <span class="scen" id="scen"></span>
+      <button id="run" data-t="run"></button>
+    </div>
+    <div id="schem"></div>
+    <div class="legend" id="legend"></div>
+    <div id="planbar" hidden></div>
+  </div>
+  <div id="right" class="show">
+    <div id="tabs"><button data-tab="chatpane" class="on" data-t="chat"></button><button data-tab="planpane" data-t="plan"></button>
+      <button data-tab="turnpane" data-t="turns"></button><button data-tab="reppane" data-t="reports"></button>
+      <button data-tab="waterpane" data-t="pl_tab" id="tabWater" hidden></button></div>
+    <div class="pane on" id="chatpane"><div id="msgs"></div><div id="sugg"></div>
+      <form id="ask"><input id="q" autocomplete="off"><button data-t="send"></button></form></div>
+    <div class="pane" id="planpane"></div>
+    <div class="pane" id="turnpane"></div>
+    <div class="pane" id="reppane"></div>
+    <div class="pane" id="waterpane"></div>
+  </div>
+</div>
+<script>
+let S = {}, L = (() => { try { return localStorage.getItem("opsLang") || "hy"; } catch (e) { return "hy"; } })();
+let ST, RUN = null, SCEN = "normal", busy = false;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const t = k => (S[L] && S[L][k]) ?? (S.en && S.en[k]) ?? k;
+const fmt = (v, d = 0) => v == null ? "–" : Number(v).toLocaleString("en-US", {maximumFractionDigits: d});
+const post = (u, b) => fetch(u, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(b)}).then(r => r.json().then(j => ({ok: r.ok, j})));
+const colour = p => p == null ? "#c9cfcb" : p >= 90 ? "#2f8f62" : p >= 70 ? "#8dbb54" : p >= 50 ? "#e8a317" : "#d9481e";
+
+function applyLang(){
+  document.documentElement.lang = L;
+  document.querySelectorAll("[data-t]").forEach(e => e.textContent = t(e.dataset.t));
+  document.querySelectorAll("#lang button").forEach(b => b.classList.toggle("on", b.dataset.l === L));
+  $("#q").placeholder = t("ask_placeholder");
+  $("#mode").textContent = "· " + t(ST && ST.mode === "live" ? "mode_live" : "mode_fixture");
+  $("#scen").innerHTML = (ST ? ST.scenarios : []).map(s => `<button data-s="${s}" class="${s === SCEN ? "on" : ""}">${esc(t("scen_" + s))}</button>`).join(" ");
+  document.querySelectorAll("#scen button").forEach(b => b.onclick = () => { SCEN = b.dataset.s; applyLang(); });
+  $("#sugg").innerHTML = (t("suggest") || []).map(s => `<button>${esc(s)}</button>`).join("");
+  document.querySelectorAll("#sugg button").forEach(b => b.onclick = () => ask(b.textContent));
+  const scale = t("legend") + ": " + [[95,"≥90%"],[75,"70–90%"],[55,"50–70%"],[10,"<50%"]].map(([p, l]) => `<span><span class="sw" style="background:${colour(p)}"></span>${l}</span>`).join("");
+  $("#legend").innerHTML = ST && ST.map ? (RUN ? `<span>${scale}</span>` : "") + `<span>${esc(t("map_sim"))}</span>`
+    : t("legend") + ": " + [[95,"≥90%"],[75,"70–90%"],[55,"50–70%"],[10,"<50%"]].map(([p, l]) => `<span><span class="sw" style="background:${colour(p)}"></span>${l}</span>`).join("")
+    + ` <span>▲ ${esc(t("pump"))}</span> <span>● ${esc(t("gate_type"))}</span>`;
+  drawSchematic(); renderPlan(); renderTurns(); renderReports(); renderWater();
+}
+document.querySelectorAll("#lang button").forEach(b => b.onclick = () => { L = b.dataset.l; try { localStorage.setItem("opsLang", L); } catch (e) {} applyLang(); });
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".pane").forEach(p => p.classList.toggle("on", p.id === b.dataset.tab));
+});
+$("#mNet").onclick = () => { $("#left").classList.add("show"); $("#right").classList.remove("show"); $("#mNet").classList.add("on"); $("#mChat").classList.remove("on"); if (MAP) MAP.resize(); };
+$("#mChat").onclick = () => { $("#right").classList.add("show"); $("#left").classList.remove("show"); $("#mChat").classList.add("on"); $("#mNet").classList.remove("on"); };
+
+let MAP = null, ML = null, MLID = {}, OWNER = {}, LABELS = [], POP = null, VIS = {};
+const TS = {g: "gravity", p: "pumping", u: "terrain uncertain", n: "terrain not covered"};
+const tv = (pre, v) => { const k = pre + v, x = t(k); return x === k ? v : x; };
+const mlFilter = f => { if (!f) return null;
+  const p = Object.entries(f).map(([k, v]) => Array.isArray(v) ? ["in", ["get", k], ["literal", v]] : ["==", ["get", k], v]);
+  return p.length === 1 ? p[0] : ["all", ...p]; };
+const isDetail = l => l.minzoom && MAP && MAP.getZoom() < l.minzoom;
+// draw order: fills, then lines thin to thick with dashed overlays last, then points with the zoom-limited ones beneath
+// (map layers v2 give an explicit order: parcels, areas, tertiary, secondary, main canal, structures)
+const rank = l => l.order !== undefined ? l.order : l.type === "fill" ? 0 : l.type === "line" ? 1 + (l.style && l.style.dashed ? 0.9 : (l.style && l.style.width || 2) / 10)
+  : 2 + (l.minzoom ? (20 - l.minzoom) / 100 : 0.5);
+// a width is a number or [[zoom, px], ...]; casing and arrows follow it
+const widthOf = (w, extra = 0) => Array.isArray(w) ? ["interpolate", ["linear"], ["zoom"], ...w.flatMap(([z, v]) => [z, v + extra])] : (w || 5) + extra;
+const midWidth = w => Array.isArray(w) ? w[Math.floor(w.length / 2)][1] : w;
+
+function arrowImage(px = 24){
+  const c = document.createElement("canvas"); c.width = c.height = px; const g = c.getContext("2d");
+  g.strokeStyle = "#ffffff"; g.lineWidth = px / 8; g.lineCap = "round"; g.lineJoin = "round"; g.beginPath();
+  g.moveTo(px * 0.35, px * 0.25); g.lineTo(px * 0.65, px * 0.5); g.lineTo(px * 0.35, px * 0.75); g.stroke();
+  return g.getImageData(0, 0, px, px);
+}
+function symbolImage(shape, colour, px = 36, stroke = "#ffffff"){
+  const c = document.createElement("canvas"); c.width = c.height = px; const g = c.getContext("2d"), m = px / 2, r = px * 0.36;
+  g.lineWidth = px / 12; g.strokeStyle = stroke; g.fillStyle = colour; g.beginPath();
+  if (shape === "square") g.rect(m - r * 0.8, m - r * 0.8, r * 1.6, r * 1.6);
+  else if (shape === "triangle") { g.moveTo(m, m - r * 1.1); g.lineTo(m + r, m + r * 0.75); g.lineTo(m - r, m + r * 0.75); g.closePath(); }
+  else if (shape === "cross") { g.lineWidth = px / 7; g.strokeStyle = colour; g.moveTo(m - r, m - r); g.lineTo(m + r, m + r); g.moveTo(m + r, m - r); g.lineTo(m - r, m + r); g.stroke(); return g.getImageData(0, 0, px, px); }
+  else g.arc(m, m, r * 0.8, 0, 2 * Math.PI);
+  g.fill(); g.stroke(); return g.getImageData(0, 0, px, px);
+}
+function swatch(l, cls){
+  if (cls) return `<span class="sw" style="background:${cls.color || "transparent"};border:1.5px ${cls.dashed ? "dashed" : "solid"} ${cls.outline || cls.color}"></span>`;
+  const s = l.style || {};
+  if (l.type === "fill") return `<span class="sw" style="background:${s.color};opacity:${Math.max(s.opacity || .5, .6)}"></span>`;
+  if (l.type === "line") return `<span class="swl" style="border-top:${Math.max(2, Math.min(midWidth(s.width) || 3, 4))}px ${s.dashed ? "dashed" : s.dotted ? "dotted" : "solid"} ${s.color}${s.casing ? `;box-shadow:0 0 0 1px ${s.casing}` : ""}"></span>`;
+  const sh = {square: '<rect x="3" y="3" width="10" height="10"/>', triangle: '<path d="M8 2 L14 13 L2 13 Z"/>',
+    cross: '<path d="M3 3 L13 13 M13 3 L3 13" stroke-width="2.5" stroke="' + s.color + '"/>'}[s.symbol] || '<circle cx="8" cy="8" r="5"/>';
+  return `<svg class="sws" viewBox="0 0 16 16" fill="${s.color}" stroke="${s.stroke || "#fff"}" stroke-width="1.5">${sh}</svg>`;
+}
+
+async function drawMap(){
+  if (MAP) { mapLang(); recolourTree(); return; }
+  $("#schem").className = "map";
+  $("#schem").innerHTML = `<div id="map"></div><button id="lyrBtn" class="mapbtn" aria-expanded="false"></button>
+    <div id="lyrPanel" class="mappanel"></div><div id="zoomHint" class="mapchip"></div>`;
+  $("#lyrBtn").onclick = () => togglePanel();
+  const r = await fetch("/map/layers.json");
+  if (!r.ok) { $("#schem").innerHTML = `<p class="muted" style="padding:16px">${esc(t("map_missing"))}</p>`; return; }
+  ML = await r.json();
+  const b = ML.basemap;
+  MAP = new maplibregl.Map({container: "map", center: [44.3, 40.12], zoom: 10.5, maxZoom: 18, attributionControl: {compact: true},
+    style: {version: 8, sources: {sat: {type: "raster", tiles: b.tiles, tileSize: b.tile_size, maxzoom: b.max_zoom, attribution: b.attribution}},
+      layers: [{id: "sat", type: "raster", source: "sat"}]}});
+  MAP.addControl(new maplibregl.NavigationControl({showCompass: false}), "top-right");
+  let moved = false; MAP.on("movestart", e => { if (e.originalEvent) moved = true; });
+  // isStyleLoaded() and "load" also wait for the satellite tiles; the style itself is ready much earlier
+  const styleReady = new Promise(ok => MAP.style && MAP.style._loaded ? ok() : MAP.once("style.load", ok));
+  styleReady.then(async () => {             // draw as soon as the style is ready; basemap tiles keep loading behind
+    const small = {};
+    await Promise.all([...new Set(ML.layers.map(l => l.file))].map(async f => {
+      if (!f.endsWith(".gz")) small[f] = await (await fetch("/map/" + f)).json();
+      MAP.addSource("src_" + f, {type: "geojson", data: small[f] || "/map/" + f});
+    }));
+    const legend = Object.fromEntries(ML.legend.groups.flatMap(g => g.classes).map(c => [c.key, c]));
+    [...ML.layers].sort((a, b) => rank(a) - rank(b)).forEach(l => addLayer(l, legend));
+    ML.layers.forEach(l => VIS[l.id] = VIS[l.id] ?? (l.visible !== false));
+    makeLabels(small);
+    const z = small["observed_zone.geojson"], bb = new maplibregl.LngLatBounds();
+    (z ? z.features : []).forEach(f => (f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates)
+      .forEach(poly => poly[0].forEach(c => bb.extend(c))));
+    if (!bb.isEmpty() && !moved) MAP.fitBounds(bb, {padding: 24, duration: 0});
+    MAP.on("click", mapClick);
+    MAP.on("mousemove", e => { MAP.getCanvas().style.cursor = hitAt(e.point) ? "pointer" : ""; });
+    MAP.on("zoomend", () => { zoomState(); });
+    togglePanel($("#map").clientWidth >= 760);
+    mapLang();
+    recolourTree();
+  });
+}
+
+function addLayer(l, legend){
+  const src = "src_" + l.file, s = l.style || {}, base = {source: src}, ids = [];
+  if (l.minzoom) base.minzoom = l.minzoom;
+  const f = mlFilter(l.filter); if (f) base.filter = f;
+  const add = (id, spec) => { MAP.addLayer({id, ...base, ...spec}); ids.push(id); OWNER[id] = l; };
+  if (l.type === "fill" && l.color_field) {
+    const cls = Object.values(legend), fc = ["match", ["get", l.color_field]], lc = ["match", ["get", l.color_field]];
+    cls.forEach(c => { fc.push(c.key, c.color || "rgba(0,0,0,0)"); lc.push(c.key, c.outline || c.color); });
+    fc.push("rgba(0,0,0,0)"); lc.push("#ffffff");
+    const dashed = cls.filter(c => c.dashed).map(c => c.key), solid = ["!", ["in", ["get", l.color_field], ["literal", dashed]]];
+    add(l.id, {type: "fill", paint: {"fill-color": fc, "fill-opacity": l.fill_opacity ?? 0.55}});
+    add(l.id + "__line", {type: "line", filter: f ? ["all", f, solid] : solid, paint: {"line-color": lc, "line-width": 0.7, "line-opacity": 0.9}});
+    const dash = ["in", ["get", l.color_field], ["literal", dashed]];
+    add(l.id + "__dash", {type: "line", filter: f ? ["all", f, dash] : dash,
+      paint: {"line-color": lc, "line-width": 0.8, "line-dasharray": [2, 2]}});
+  } else if (l.type === "fill") {
+    add(l.id, {type: "fill", paint: {"fill-color": s.color, "fill-opacity": s.opacity ?? 0.35}});
+    add(l.id + "__line", {type: "line", paint: {"line-color": s.color, "line-width": 1, "line-opacity": 0.8}});
+  } else if (l.type === "line") {
+    if (l.popup && l.popup.length) {      // outlines of areas (communities): a clear fill lets a click inside open them
+      const poly = ["in", ["geometry-type"], ["literal", ["Polygon", "MultiPolygon"]]];
+      add(l.id + "__hit", {type: "fill", filter: f ? ["all", f, poly] : poly, paint: {"fill-color": "#000000", "fill-opacity": 0}});
+    }
+    const layout = {"line-cap": s.dashed || s.dotted ? "butt" : "round", "line-join": "round"};
+    if (s.casing) add(l.id + "__casing", {type: "line", layout, paint: {"line-color": s.casing, "line-width": widthOf(s.width, s.casing_extra || 2)}});
+    const paint = {"line-color": s.color, "line-width": widthOf(s.width)};
+    if (s.dashed) paint["line-dasharray"] = [2, 1.5];
+    if (s.dotted) paint["line-dasharray"] = [0.6, 1.8];
+    if (s.opacity) paint["line-opacity"] = s.opacity;
+    add(l.id, {type: "line", layout, paint});
+    if (s.arrows) {                       // downstream flow chevrons: an uphill canal would show at once
+      if (!MAP.hasImage("flow_arrow")) MAP.addImage("flow_arrow", arrowImage(), {pixelRatio: 2});
+      add(l.id + "__arrows", {type: "symbol", minzoom: Math.max(l.minzoom || 0, (ML.zoom && ML.zoom.arrows_min) || 14),
+        layout: {"symbol-placement": "line", "symbol-spacing": 90, "icon-image": "flow_arrow", "icon-allow-overlap": true,
+                 "icon-size": ["interpolate", ["linear"], ["zoom"], 14, 0.55, 17, 0.9]}});
+    }
+  } else {
+    const img = `sym_${s.symbol}_${s.color}_${s.stroke || ""}`;
+    if (!MAP.hasImage(img)) MAP.addImage(img, symbolImage(s.symbol, s.color, 36, s.stroke || "#ffffff"), {pixelRatio: 2});
+    const big = s.size ? s.size / 18 : (s.symbol === "triangle" ? 1.4 : 1.1);   // the image draws 18 px at size 1
+    add(l.id, {type: "symbol", layout: {"icon-image": img, "icon-allow-overlap": true, "icon-ignore-placement": true,
+      "icon-size": ["interpolate", ["linear"], ["zoom"], 10, big * 0.6, 15, big]}});
+  }
+  MLID[l.id] = ids;
+}
+
+function labelPoint(geom){
+  if (geom.type === "Point") return geom.coordinates;
+  const polys = geom.type === "Polygon" ? [geom.coordinates] : geom.type === "MultiPolygon" ? geom.coordinates : [];
+  let best = null, area = -1;
+  polys.forEach(p => { const xs = p[0].map(c => c[0]), ys = p[0].map(c => c[1]);
+    const a = (Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys));
+    if (a > area) { area = a; best = [(Math.max(...xs) + Math.min(...xs)) / 2, (Math.max(...ys) + Math.min(...ys)) / 2]; } });
+  return best;
+}
+async function makeLabels(small){
+  for (const l of ML.layers.filter(x => x.label_field)) {
+    let data = small[l.file];
+    if (!data) data = await (await fetch("/map/" + l.file)).json();
+    const flt = l.filter || {};
+    data.features.filter(f => Object.entries(flt).every(([k, v]) => Array.isArray(v) ? v.includes(f.properties[k]) : f.properties[k] === v))
+      .forEach(f => { const at = labelPoint(f.geometry); if (!at) return;
+        const el = document.createElement("div"); el.className = "mlabel" + (l.type === "symbol" ? " node" : "");
+        el.textContent = f.properties[l.label_field];
+        LABELS.push({l, el, m: new maplibregl.Marker({element: el, anchor: l.type === "symbol" ? "left" : "center",
+          offset: l.type === "symbol" ? [9, 0] : [0, 0]}).setLngLat(at).addTo(MAP)}); });
+  }
+  zoomState();
+}
+
+function zoomState(){
+  if (!MAP || !ML) return;
+  const z = MAP.getZoom();
+  LABELS.forEach(x => x.el.style.display = VIS[x.l.id] && z >= (x.l.label_minzoom ?? ML.zoom.labels_min) ? "" : "none");
+  document.querySelectorAll("#lyrPanel .lp-row").forEach(r => r.classList.toggle("dim", isDetail(ML.layers.find(l => l.id === r.dataset.l))));
+  $("#zoomHint").style.display = z < ML.zoom.parcels_min ? "" : "none";
+}
+
+function setVisible(id, on){
+  VIS[id] = on;
+  (MLID[id] || []).forEach(x => MAP.setLayoutProperty(x, "visibility", on ? "visible" : "none"));
+  zoomState();
+}
+
+function togglePanel(open){
+  const p = $("#lyrPanel"), on = open ?? !p.classList.contains("open");
+  p.classList.toggle("open", on); $("#lyrBtn").setAttribute("aria-expanded", on);
+}
+
+// a water plan on the map (when shown) takes over the colours; otherwise Run dekad colours the tree
+function recolourTree(){ return PL.plan && PL.show ? recolourPlan() : recolourRun(); }
+// after Run dekad: every canal and gate of the tree coloured by the share of need met below it
+function recolourRun(){
+  if (!MAP || !ML || !OWNER) return;
+  if (MAP.getLayer("plan_nodes")) MAP.setLayoutProperty("plan_nodes", "visibility", "none");
+  planParcels(false);
+  const np = RUN && RUN.node_pct, has = np && Object.keys(np).length;
+  const expr = has ? ["match", ["get", "node"], ...Object.entries(np).flatMap(([n, v]) => [n, colour(v)]), "#c9cfcb"] : null;
+  const net = ML.layers.filter(l => l.file.startsWith("network"));
+  net.filter(l => l.type === "line").forEach(l => (MLID[l.id] || []).forEach(id => {
+    if (MAP.getLayer(id) && MAP.getLayer(id).type === "line" && !id.endsWith("__casing")) MAP.setPaintProperty(id, "line-color", expr || l.style.color); }));
+  const src = "src_" + (net[0] || {}).file;
+  if (!MAP.getSource(src)) return;
+  if (!MAP.getLayer("run_nodes")) {
+    const firstSym = MAP.getStyle().layers.find(x => x.type === "symbol");
+    MAP.addLayer({id: "run_nodes", type: "circle", source: src, filter: ["all", ["==", ["geometry-type"], "Point"], ["has", "node"]],
+      paint: {"circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 2, 15, 6], "circle-color": "#c9cfcb",
+              "circle-stroke-color": "#ffffff", "circle-stroke-width": 0.8}}, firstSym && firstSym.id);
+  }
+  MAP.setLayoutProperty("run_nodes", "visibility", has ? "visible" : "none");
+  if (has) MAP.setPaintProperty("run_nodes", "circle-color", expr);
+}
+
+// ---------------------------------------------------------------- water delivery plan (owner approval B1, B5)
+let PL = {date: "2025-07-01", text: "", loss: "assumed", card: null, plan: null, err: "", busy: false, show: true, hour: 24};
+const PCOL = {now: "#1f6fd1", served: "#2f8f62", partly: "#e8a317", wait: "#a8c7b8", nr: "#d9481e", canal: "#3d8fe0", dry: "#b9c2be",
+              p_water: "#5aa9e6", p_now: "#0b63ce", p_nr: "#d9481e"};
+const pts = s => s ? new Date(s.replace(" ", "T")).getTime() : null;
+const clock = ms => { const d = new Date(ms), p = n => String(n).padStart(2, "0"); return `${p(d.getDate())}.${p(d.getMonth() + 1)} ${p(d.getHours())}:${p(d.getMinutes())}`; };
+
+function planAt(){
+  const P = PL.plan, T = pts(P.window.start) + PL.hour * 3600e3, out = {}, can = {};
+  P.outlets.forEach(o => {
+    const a = pts(o.o), b = pts(o.c);
+    out[o.n] = o.d <= 0 ? PCOL.nr : (a != null && T >= a && T < b) ? PCOL.now : T >= b ? (o.s === "served" ? PCOL.served : PCOL.partly) : PCOL.wait;
+  });
+  Object.entries(P.canals).forEach(([k, v]) => { can[k] = pts(v.from) <= T && T < pts(v.to) ? PCOL.canal : PCOL.dry; });
+  return {T, out, can};
+}
+function recolourPlan(){
+  if (!MAP || !ML || !OWNER || !PL.plan) return;
+  const {out, can} = planAt();
+  const lineExpr = ["match", ["get", "node"], ...Object.entries(can).flatMap(([n, c]) => [n, c]), PCOL.dry];
+  const net = ML.layers.filter(l => l.file.startsWith("network"));
+  net.filter(l => l.type === "line").forEach(l => (MLID[l.id] || []).forEach(id => {
+    if (MAP.getLayer(id) && MAP.getLayer(id).type === "line" && !id.endsWith("__casing")) MAP.setPaintProperty(id, "line-color", lineExpr); }));
+  if (MAP.getLayer("run_nodes")) MAP.setLayoutProperty("run_nodes", "visibility", "none");
+  const src = "src_" + (net[0] || {}).file;
+  if (!MAP.getSource(src)) return;
+  if (!MAP.getLayer("plan_nodes")) {
+    MAP.addLayer({id: "plan_nodes", type: "circle", source: src,
+      filter: ["all", ["==", ["geometry-type"], "Point"], ["in", ["get", "kind"], ["literal", ["tertiary_gate", "direct_outlet", "main_gate", "main_pump"]]]],
+      paint: {"circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 2.2, 15, 7], "circle-color": "#c9cfcb",
+              "circle-stroke-color": "#ffffff", "circle-stroke-width": 0.8}});
+  }
+  const ptExpr = ["match", ["get", "node"], ...Object.entries({...Object.fromEntries(Object.keys(PL.plan.canals).map(k => [k, can[k]])), ...out}).flatMap(([n, c]) => [n, c]), "rgba(0,0,0,0)"];
+  MAP.setPaintProperty("plan_nodes", "circle-color", ptExpr);
+  MAP.setPaintProperty("plan_nodes", "circle-stroke-color", ["match", ["get", "node"], ...Object.keys(out).flatMap(n => [n, "#ffffff"]), "rgba(0,0,0,0)"]);
+  MAP.setLayoutProperty("plan_nodes", "visibility", "visible");
+  planParcels(true);
+}
+// the parcels that get water in the plan, blue (owner 2026-11-03); darker while their outlet's turn is running
+function planParcels(on){
+  if (!MAP || !ML) return;
+  const lt = ML.layers.find(l => l.id === "parcels");
+  if (lt && MAP.getLayer("parcels")) MAP.setPaintProperty("parcels", "fill-opacity", on ? 0.1 : (lt.fill_opacity ?? 0.55));
+  if (!on || !PL.plan) { ["plan_parcels", "plan_parcels_line"].forEach(id => MAP.getLayer(id) && MAP.setLayoutProperty(id, "visibility", "none")); return; }
+  const url = "/api/planner/parcels?plan=" + PL.plan.plan_id;
+  if (!MAP.getSource("plan_parcels")) MAP.addSource("plan_parcels", {type: "geojson", data: url});
+  else if (PL.parcelsFor !== url) MAP.getSource("plan_parcels").setData(url);
+  PL.parcelsFor = url;
+  if (!MAP.getLayer("plan_parcels")) {
+    const firstNet = MAP.getStyle().layers.find(x => OWNER[x.id] && OWNER[x.id].file && OWNER[x.id].file.startsWith("network"));
+    MAP.addLayer({id: "plan_parcels", type: "fill", source: "plan_parcels", paint: {"fill-opacity": 0.72}}, firstNet && firstNet.id);
+    MAP.addLayer({id: "plan_parcels_line", type: "line", source: "plan_parcels", paint: {"line-width": 0.6, "line-opacity": 0.9}}, firstNet && firstNet.id);
+  }
+  const h = PL.hour, now = ["all", [">=", h, ["coalesce", ["get", "a"], 1e9]], ["<", h, ["coalesce", ["get", "b"], -1]]];
+  const none = "rgba(0,0,0,0)", notDue = ["==", ["get", "s"], "x"];             // land without need in this window
+  const col = ["case", notDue, none, ["==", ["get", "s"], "n"], PCOL.p_nr, now, PCOL.p_now, PCOL.p_water];
+  MAP.setPaintProperty("plan_parcels", "fill-color", col);
+  MAP.setPaintProperty("plan_parcels_line", "line-color", ["case", notDue, none, ["==", ["get", "s"], "n"], PCOL.p_nr, "#ffffff"]);
+  ["plan_parcels", "plan_parcels_line"].forEach(id => MAP.setLayoutProperty(id, "visibility", "visible"));
+}
+function planBar(){
+  const bar = $("#planbar");
+  if (!PL.plan || !PL.show) { bar.hidden = true; return; }
+  const P = PL.plan, H = Math.ceil((pts(P.window.last) - pts(P.window.start)) / 3600e3);
+  PL.hour = Math.min(PL.hour, H);
+  const T = pts(P.window.start) + PL.hour * 3600e3;
+  bar.hidden = false;
+  bar.innerHTML = `<div class="pb-top"><b>${esc(t("pl_time"))}: ${esc(clock(T))}</b><span class="muted">${esc(t("pl_note_sim"))}</span></div>
+    <input type="range" id="plHour" min="0" max="${H}" step="1" value="${PL.hour}" aria-label="${esc(t("pl_time"))}">
+    <div class="pb-leg"><span><span class="sw" style="background:${PCOL.p_now}"></span>${esc(t("pl_parcel_now"))}</span>
+      <span><span class="sw" style="background:${PCOL.p_water}"></span>${esc(t("pl_parcel_water"))}</span>
+      <span><span class="sw" style="background:${PCOL.p_nr}"></span>${esc(t("pl_parcel_nr"))}</span></div>
+    <div class="pb-leg">${[["now", "pl_now"], ["wait", "pl_wait"], ["served", "pl_done"], ["partly", "pl_partly"], ["nr", "pl_nr"]]
+      .map(([c, k]) => `<span><span class="dot" style="background:${PCOL[c]}"></span>${esc(t(k))}</span>`).join("")}
+      <span><span class="swl" style="border-top:3px solid ${PCOL.canal}"></span> ${esc(t("pl_canal_now"))}</span></div>`;
+  $("#plHour").oninput = e => { PL.hour = +e.target.value; planBar(); recolourPlan(); };
+}
+
+function renderWater(){
+  const p = $("#waterpane");
+  if (!ST || !ST.planner) return;
+  $("#tabWater").hidden = false;
+  const P = PL.plan;
+  let h = `<p class="muted">${esc(t("pl_intro"))}</p><div class="pl-form">
+    <div class="pl-row"><label>${esc(t("pl_date"))}<input type="date" id="plDate" min="${ST.planner.from}" max="${ST.planner.to}" value="${esc(PL.date)}"></label>
+      <label>${esc(t("pl_losses"))}<select id="plLoss">${["low", "assumed", "high"].map(x => `<option value="${x}" ${x === PL.loss ? "selected" : ""}>${esc(t("pl_loss_" + x))}</option>`).join("")}</select></label></div>
+    <label>${esc(t("pl_supply"))}<input id="plText" autocomplete="off" placeholder="${esc(t("pl_supply_ph"))}" value="${esc(PL.text)}"></label>
+    <button class="btn-main" id="plRead" style="min-height:44px;border-radius:8px" ${PL.busy ? "disabled" : ""}>${esc(t("pl_read"))}</button></div>`;
+  if (PL.err) h += `<p class="warn">${esc(PL.err)}</p>`;
+  if (PL.card) h += `<div class="card approve"><b>${esc(PL.card.text)}</b>${PL.card.notes.map(n => `<p class="muted">${esc(n)}</p>`).join("")}
+      <p class="muted">${esc(PL.card.label)}</p><div class="pl-btns"><button class="btn-main" id="plYes">${esc(t("pl_confirm"))}</button>
+      <button class="btn-sec" id="plNo">${esc(t("pl_cancel"))}</button></div></div>`;
+  if (PL.busy) h += `<p class="muted">${esc(t("pl_running"))}</p>`;
+  if (P) {
+    const s = P.summary, a = P.account;
+    h += `<h3 style="margin:14px 0 4px">${esc(t("pl_summary"))}</h3><p class="muted">${esc(P.supply.start)} → ${esc(P.supply.end)} · ${fmt(P.supply.head_m3)} m³ · ${esc(P.plan_id)}</p>
+      <div class="pl-kpi"><div><b>${fmt(s.due_ha, 2)}</b><span>${esc(t("pl_due"))}</span></div><div><b>${fmt(s.ha_with_a_turn, 2)}</b><span>${esc(t("pl_turn"))}</span></div>
+      <div><b>${fmt(s.need_met_pct, 1)}</b><span>${esc(t("pl_met"))}</span></div><div><b>${s.outlets_served} / ${s.outlets_partly} / ${s.outlets_not_reached}</b><span>${esc(t("pl_outlets"))}</span></div>
+      <div><b>${fmt(s.last_arrival_h, 1)}</b><span>${esc(t("pl_last"))}</span></div><div><b>${fmt(s.escape_pct, 1)}</b><span>${esc(t("pl_escape"))}</span></div></div>`;
+    if (s.routing_error || s.routing_flag) h += `<p class="warn">${esc(t("pl_route_flag"))}</p>`;
+    h += `<label class="lp-row" style="min-height:44px"><input type="checkbox" id="plShow" ${PL.show ? "checked" : ""}><span>${esc(t("pl_show"))}</span></label>
+      <div class="pl-btns"><button class="btn-sec" id="plMap">${esc(t("pl_map_btn"))}</button>
+      <button class="btn-main" onclick="window.open('/api/planner/report?plan=${P.plan_id}&lang=${L}','_blank')">${esc(t("pl_report"))}</button>
+      <button class="btn-sec" onclick="location.href='/api/planner/excel?plan=${P.plan_id}'">${esc(t("pl_excel"))}</button></div>
+      <h3 style="margin:14px 0 4px">${esc(t("pl_account"))}</h3><table>` + Object.entries(a).filter(([k]) => k !== "closes")
+      .map(([k, v]) => `<tr><td>${esc(t("acc_" + k))}</td><td class="num">${fmt(v)}</td></tr>`).join("") + `</table>`;
+    const nr = P.outlets.filter(o => o.d <= 0).sort((x, y) => (x.u ?? 99) - (y.u ?? 99));
+    h += `<h3 style="margin:14px 0 4px">${esc(t("pl_not_reached"))} (${nr.length})</h3>` + (nr.length ? `<div class="pl-scroll"><table><tr><th>${esc(t("pl_outlet"))}</th><th>${esc(t("F_com"))}</th><th class="num">ha</th><th class="num">${esc(t("pl_days"))}</th></tr>`
+      + nr.slice(0, 15).map(o => `<tr><td>${esc(o.n)}</td><td>${esc(o.com)}</td><td class="num">${fmt(o.ha, 2)}</td><td class="num">${fmt(o.u, 0)}</td></tr>`).join("")
+      + `</table></div>` + (nr.length > 15 ? `<p class="muted">${esc(t("pl_more"))}</p>` : "") : `<p class="muted">${esc(t("pl_none"))}</p>`);
+    const ch = P.offtakes.flatMap(o => o.changes.map(c => ({n: o.n, ...c}))).sort((x, y) => x.here.localeCompare(y.here));
+    h += `<h3 style="margin:14px 0 4px">${esc(t("pl_main"))}</h3><div class="pl-scroll"><table><tr><th>${esc(t("pl_outlet"))}</th><th>${esc(t("pl_head"))}</th><th>${esc(t("pl_here"))}</th><th class="num">${esc(t("unit_lps"))}</th></tr>`
+      + ch.slice(0, 20).map(c => `<tr><td>${esc(c.n)}</td><td>${esc(c.head.slice(5))}</td><td>${esc(c.here.slice(5))}</td><td class="num">${fmt(c.lps)}</td></tr>`).join("")
+      + `</table></div>` + (ch.length > 20 ? `<p class="muted">${esc(t("pl_more"))}</p>` : "");
+  }
+  p.innerHTML = h;
+  const keep = () => { PL.date = $("#plDate").value; PL.text = $("#plText").value; PL.loss = $("#plLoss").value; };
+  ["#plDate", "#plText", "#plLoss"].forEach(s => $(s).onchange = keep);
+  $("#plText").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); $("#plRead").click(); } };
+  $("#plRead").onclick = async () => {
+    keep(); PL.err = ""; PL.card = null; renderWater();
+    const {ok, j} = await post("/api/planner/parse", {text: PL.text, date: PL.date, lang: L});
+    if (ok) PL.card = j; else PL.err = j.error || "error";
+    renderWater();
+  };
+  if (PL.card) {
+    $("#plNo").onclick = () => { PL.card = null; renderWater(); };
+    $("#plYes").onclick = async () => {
+      const c = PL.card; PL.card = null; PL.busy = true; PL.err = ""; renderWater();
+      let r = await post("/api/planner/confirm", {supply_id: c.supply_id, token: c.token});
+      if (r.ok) r = await post("/api/planner/run", {supply_id: c.supply_id, losses: PL.loss});
+      PL.busy = false;
+      if (r.ok) { PL.plan = r.j; PL.show = true; PL.hour = 24; } else PL.err = r.j.error || "error";
+      renderWater(); planBar(); recolourTree();
+    };
+  }
+  if (P) {
+    $("#plShow").onchange = e => { PL.show = e.target.checked; planBar(); recolourTree(); };
+    $("#plMap").onclick = () => { if (innerWidth <= 860) $("#mNet").click(); if (MAP) MAP.resize(); };
+  }
+  planBar();
+}
+
+function mapLang(){
+  if (!ML || !MAP) return;
+  $("#lyrBtn").textContent = "☰ " + t("layers");
+  $("#zoomHint").textContent = t("zoom_hint");
+  const groups = ML.legend.groups.map(g => `<div class="lg-g"><div class="lg-h">${esc(t("G_" + g.key))}</div>`
+    + g.classes.map(c => `<div class="lg-c">${swatch(null, c)}${esc(t("C_" + c.key))}</div>`).join("") + "</div>").join("");
+  $("#lyrPanel").innerHTML = `<div class="lp-top"><b>${esc(t("layers"))}</b><button class="lp-x" aria-label="${esc(t("close"))}">×</button></div>`
+    + ML.layers.map(l => `<label class="lp-row" data-l="${esc(l.id)}"><input type="checkbox" ${VIS[l.id] ? "checked" : ""}>`
+      + `${l.legend ? '<span class="sw multi"></span>' : swatch(l)}<span>${esc(t("L_" + l.id))}`
+      + (l.minzoom ? ` <small class="mz">${esc(t("from_zoom").replace("{z}", l.minzoom))}</small>` : "") + `</span></label>`
+      + (l.legend ? `<div class="lg">${groups}</div>` : "")).join("")
+    + `<p class="lp-src">${esc(t("legend_source"))}</p><p class="lp-src">${esc(t("map_sim"))}</p>`;
+  $("#lyrPanel .lp-x").onclick = () => togglePanel(false);
+  document.querySelectorAll("#lyrPanel .lp-row input").forEach(i => i.onchange = () => setVisible(i.closest(".lp-row").dataset.l, i.checked));
+  ML.layers.forEach(l => setVisible(l.id, VIS[l.id]));
+  if (POP) { POP.remove(); POP = null; }
+}
+
+function popupLayers(){ return Object.keys(OWNER).filter(id => (OWNER[id].popup || []).length && MAP.getLayer(id) && VIS[OWNER[id].id]
+  && !id.endsWith("__line") && !id.endsWith("__dash")); }
+function hitAt(pt){
+  const ids = popupLayers(), pad = 7;
+  const near = MAP.queryRenderedFeatures([[pt.x - pad, pt.y - pad], [pt.x + pad, pt.y + pad]], {layers: ids.filter(id => MAP.getLayer(id).type !== "fill")});
+  if (near.length) return near.sort((a, b) => (a.layer.type === "symbol" ? 0 : 1) - (b.layer.type === "symbol" ? 0 : 1))[0];
+  // among areas: coloured parcels first, then other areas, community outlines last
+  const w = f => f.layer.id.endsWith("__hit") ? 2 : OWNER[f.layer.id].color_field ? 0 : 1;
+  return MAP.queryRenderedFeatures(pt, {layers: ids.filter(id => MAP.getLayer(id).type === "fill")}).sort((a, b) => w(a) - w(b))[0] || null;
+}
+function fieldValue(k, v){
+  if (k === "t") return t("C_" + v);
+  if (k === "ts") return tv("TS_", TS[v] || v);
+  if (k === "kind") return tv("K_", v);
+  if (k === "terrain_state") return tv("TS_", v);
+  if (k === "section") return tv("SEC_", v);
+  if (k === "basis" || k === "pump_basis" || k === "capacity_note") return tv("V_", v);
+  if (k === "ha" || k === "zone_ha") return fmt(v, 2);
+  if (typeof v === "number") return fmt(v, 0);
+  return v;
+}
+function objectTitle(l, p){
+  if (l.id === "parcels") return t("C_" + p.t);
+  if (p.name_hy || p.name_en) return L === "hy" ? (p.name_hy || p.name_en) : (p.name_en || p.name_hy);
+  return p.label || p.name || t("L_" + l.id);
+}
+function askContext(l, p){
+  if (l.id === "parcels") return [t("C_" + p.t), `${fmt(p.ha, 2)} ${t("unit_ha")}`, p.com, p.o ? `${t("F_o")} ${p.o}` : null].filter(Boolean).join(" · ");
+  if (l.id === "communities") return `${t("F_com")} ${p.name}`;
+  return objectTitle(l, p);
+}
+function mapClick(e){
+  const f = hitAt(e.point); if (!f) return;
+  const l = OWNER[f.layer.id], p = f.properties;
+  const title = objectTitle(l, p);
+  const rows = l.popup.filter(k => p[k] != null && p[k] !== "" && p[k] !== "null" && fieldValue(k, p[k]) !== title)
+    .map(k => `<tr><th>${esc(t("F_" + k))}</th><td>${esc(fieldValue(k, p[k]))}</td></tr>`).join("");
+  if (POP) POP.remove();
+  POP = new maplibregl.Popup({maxWidth: "290px", focusAfterOpen: false}).setLngLat(e.lngLat)
+    .setHTML(`<div class="pop"><b>${esc(title)}</b><small>${esc(t("L_" + l.id))}</small><table>${rows}</table>`
+      + `<button class="askbtn">${esc(t("ask_about"))}</button><small class="sim">${esc(t("map_sim"))}</small></div>`).addTo(MAP);
+  POP.getElement().querySelector(".askbtn").onclick = () => askAbout(askContext(l, p));
+  requestAnimationFrame(() => {             // keep the whole popup inside the map
+    const pr = POP.getElement().getBoundingClientRect(), mr = $("#map").getBoundingClientRect(), m = 8;
+    const mb = 34;                          // clear of the attribution line
+    const dy = pr.bottom > mr.bottom - mb ? Math.min(pr.bottom - mr.bottom + mb, pr.top - mr.top - m) : pr.top < mr.top + m ? pr.top - mr.top - m : 0;
+    const dx = pr.right > mr.right - m ? pr.right - mr.right + m : pr.left < mr.left + m ? pr.left - mr.left - m : 0;
+    if (dx || dy) MAP.panBy([dx, dy], {duration: 250});
+  });
+}
+function askAbout(ctx){
+  if (innerWidth <= 860) $("#mChat").click();
+  openTab("chatpane");
+  const q = $("#q"); q.value = `«${ctx}» `; q.focus(); q.setSelectionRange(q.value.length, q.value.length);
+  q.title = t("ask_ready"); q.classList.add("ctx"); setTimeout(() => q.classList.remove("ctx"), 1600);
+}
+
+function drawSchematic(){
+  if (!ST) return;
+  if (ST.map) return drawMap();
+  const order = ST.order, stages = ST.network.stages, W = 900, rowH = 150, H = 40 + stages.length * rowH;
+  const pct = RUN ? Object.fromEntries(RUN.table.map(r => [r.branch, r.pct])) : {};
+  const gp = RUN ? RUN.gate_pct : {};
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t("network"))}">`;
+  stages.forEach((st, si) => {
+    const y = 40 + si * rowH, bs = order.filter(b => ST.network.branches[b].stage === st);
+    svg += `<text x="10" y="${y - 12}" font-size="13" fill="#5d6b64">${st === "I" ? "I" : "II"}</text>`;
+    svg += `<line x1="30" y1="${y}" x2="${W - 20}" y2="${y}" stroke="#2f6fb0" stroke-width="7" stroke-linecap="round"/>`;
+    bs.forEach((b, i) => {
+      const x = 90 + i * ((W - 160) / Math.max(1, bs.length - 1 || 1)), info = ST.network.branches[b];
+      const c = colour(pct[b]);
+      svg += `<line x1="${x}" y1="${y}" x2="${x}" y2="${y + 95}" stroke="${c}" stroke-width="5" stroke-dasharray="7 5"/>`;
+      svg += info.type === "pump" ? `<path d="M${x - 9},${y + 9} L${x + 9},${y + 9} L${x},${y - 8} Z" fill="#fff" stroke="#21332b" stroke-width="2"/>`
+                                 : `<circle cx="${x}" cy="${y}" r="8" fill="#fff" stroke="#21332b" stroke-width="2"/>`;
+      ST.gates.filter(g => g.branch === b).forEach((g, k) => {
+        const gy = y + 30 + k * 28;
+        svg += `<rect x="${x + 6}" y="${gy - 9}" width="58" height="18" rx="4" fill="${colour(gp[g.gate])}" opacity=".9"/>`;
+        svg += `<text x="${x + 10}" y="${gy + 4}" font-size="11" fill="#fff">${esc(g.gate)}</text>`;
+      });
+      svg += `<text x="${x - 14}" y="${y - 14}" font-size="14" font-weight="700" fill="#1d2a24">${esc(b)}</text>`;
+      if (pct[b] != null) svg += `<text x="${x - 14}" y="${y + 120}" font-size="12" fill="#5d6b64">${fmt(pct[b], 0)}%</text>`;
+    });
+  });
+  $("#schem").innerHTML = svg + "</svg>";
+}
+
+function addMsg(html, me){ const d = document.createElement("div"); d.className = "msg " + (me ? "me" : "bot"); d.innerHTML = html; $("#msgs").appendChild(d); $("#msgs").scrollTop = 1e9; return d; }
+
+async function ask(text){
+  if (busy || !text.trim()) return;
+  busy = true; addMsg(esc(text), true);
+  const wait = addMsg(`<span class="muted">${esc(t("thinking"))}</span>`);
+  const {j} = await post("/api/chat", {text, lang: L});
+  let h = esc(j.answer || j.error || "");
+  if (j.kind === "refusal" && j.alternative) h += `<br><button class="alt">${esc(j.alternative)}</button>`;
+  if (j.kind === "not_enabled") h += "<br>" + (j.suggestions || []).map(s => `<button class="alt">${esc(s)}</button>`).join(" ");
+  if (j.kind === "withheld") h = `<span class="warn">${h}</span>`;
+  if (j.what_i_did && j.what_i_did.length) h += `<details><summary>${esc(t("what_i_did"))}</summary><ul>${j.what_i_did.map(x => `<li>${esc(x)}</li>`).join("")}</ul></details>`;
+  wait.innerHTML = h;
+  wait.querySelectorAll(".alt").forEach(b => b.onclick = () => j.kind === "refusal" ? (RUN ? openTab("reppane") : ask(t("suggest")[0])) : ask(b.textContent));
+  busy = false;
+}
+$("#ask").onsubmit = e => { e.preventDefault(); const v = $("#q").value; $("#q").value = ""; ask(v); };
+function openTab(id){ document.querySelector(`#tabs button[data-tab="${id}"]`).click(); }
+
+$("#run").onclick = async () => {
+  if (busy) return; busy = true;
+  const per = $("#period").value;
+  addMsg(esc(`${t("run")}: ${per} · ${t("scen_" + SCEN)}`), true);
+  const wait = addMsg(`<span class="muted">${esc(t("thinking"))}</span>`);
+  const {ok, j} = await post("/api/run", {period: per, scenario: SCEN});
+  busy = false;
+  if (!ok) { wait.innerHTML = `<span class="warn">${esc(j.error)}</span>`; return; }
+  RUN = j;
+  wait.innerHTML = esc(j.answer) + `<small>${esc(t("save_review"))}</small>`
+    + `<details><summary>${esc(t("what_i_did"))}</summary><ul>${j.what_i_did.map(s => `<li>${esc(s)}</li>`).join("")}</ul></details>`;
+  applyLang();
+};
+
+async function renderPlan(){
+  const p = $("#planpane");
+  if (!RUN) { p.innerHTML = `<p class="muted">${esc(t("run_first"))}</p>`; return; }
+  const r = RUN;
+  let h = `<p class="muted">${esc(ST.labels.rule)} · ${esc(ST.labels.capacity)}</p>`;
+  if (!r.floors_met) h += `<p class="warn">${esc(t("floors_not_met"))}</p>`;
+  h += `<table><tr><th>${t("branch")}</th><th class="num">${t("need")}</th><th class="num">${t("alloc")}</th><th class="num">${t("pct")}</th><th class="num">${t("ruleA")}</th><th class="num">${t("ruleB")}</th><th class="num">${t("hours")}</th></tr>`
+    + r.table.map(x => `<tr><td>${esc(x.branch)}</td><td class="num">${fmt(x.need_m3)}</td><td class="num">${fmt(x.alloc_m3)}</td><td class="num">${fmt(x.pct, 1)}</td><td class="num">${fmt(x.pct_A, 1)}</td><td class="num">${fmt(x.pct_B, 1)}</td><td class="num">${fmt(x.hours, 1)}</td></tr>`).join("") + "</table>";
+  h += `<p class="muted">${esc(t("objections"))}: ${r.objections.length ? r.objections.map(o => esc(o.branches.join(", "))).join("; ") : esc(t("none"))}</p>`;
+  h += `<div class="card approve" id="appr"></div>`;
+  p.innerHTML = h;
+  if (r.decision) { $("#appr").innerHTML = `<b>${esc(t("selected"))}</b>`; return; }
+  const {j} = await post("/api/card", {proposal: r.proposal});
+  $("#appr").innerHTML = `<b>${esc(t("select_plan"))}</b><p class="muted">${esc(t("select_note"))}</p>`
+    + `<button class="btn-main" id="yes">${esc(t("select_plan"))}</button><button class="btn-sec" id="no">${esc(t("reject"))}</button>`;
+  const go = async d => {
+    $("#yes").disabled = $("#no").disabled = true;
+    const res = await post("/api/decide", {proposal: r.proposal, decision: d, token: j.token});
+    if (res.ok) { r.decision = d; $("#appr").innerHTML = `<b>${esc(d === "approve" ? t("selected") : t("reject"))}</b>`; renderReports(); }
+    else $("#appr").innerHTML = `<span class="warn">${esc(res.j.error)}</span>`;
+  };
+  $("#yes").onclick = () => go("approve"); $("#no").onclick = () => go("reject");
+}
+
+function renderTurns(){
+  const p = $("#turnpane");
+  if (!RUN) { p.innerHTML = `<p class="muted">${esc(t("run_first"))}</p>`; return; }
+  const maxH = Math.max(...RUN.turns.map(x => x.end_h), 240);
+  const head = RUN.rounds ? `<p class="muted">${esc(t("rounds_note"))}: ` + RUN.rounds.map(r => `${esc(r.round)} · ${esc(r.start)}`
+    + (r.stage_II_window_days ? ` · ${esc(t("stage2_window"))} ${fmt(r.stage_II_window_days, 1)} ${esc(t("days"))}` : "")).join("; ") + "</p>" : "";
+  p.innerHTML = `<p class="muted">${esc(ST.labels.simulation)}</p>` + head + RUN.turns.map(x => `
+    <div style="margin:6px 0;font-size:12px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:52px;flex:none">${esc(x.gate)}</span>
+        <div style="flex:1;position:relative;height:16px;background:#efe9dc;border-radius:3px;min-width:0">
+          <div style="position:absolute;left:${100 * x.start_h / maxH}%;width:${100 * x.hours / maxH}%;height:16px;background:${x.fits_dekad ? "#176b56" : "#d9481e"};border-radius:3px"></div></div>
+        <span class="num" style="width:56px;flex:none">${fmt(x.hours, 1)} h</span></div>`
+    + (x.open ? `<div class="muted" style="margin-left:60px">${esc(x.open)} → ${esc(x.close)} · ${fmt(x.lps)} ${esc(t("unit_lps"))} · ${fmt(x.m3)} m³`
+      + (x.next ? ` · ${esc(t("next_here"))}: ${esc(x.next)} ${esc(x.next_open)}` : "") + `</div>` : "") + `</div>`).join("");
+}
+
+function renderReports(){
+  const p = $("#reppane");
+  if (!RUN) { p.innerHTML = `<p class="muted">${esc(t("run_first"))}</p>`; return; }
+  const sel = RUN.decision === "approve";
+  p.innerHTML = `<div class="card"><b>${esc(t("sheet"))}</b><p class="muted">${esc(ST.labels.simulation)}</p>
+      <button class="btn-sec" onclick="window.open('/api/sheet?proposal=${RUN.proposal}&lang=${L === "ru" ? "en" : L}','_blank')">${esc(t("sheet"))}</button></div>
+    <div class="card"><b>${esc(t("excel"))}</b><p class="muted">${esc(sel ? ST.labels.simulation : t("excel_locked"))}</p>
+      <button class="btn-sec" ${sel ? "" : "disabled"} onclick="location.href='/api/excel?proposal=${RUN.proposal}'">${esc(t("excel"))}</button></div>`;
+}
+
+(async () => {
+  S = await (await fetch("/api/strings")).json();
+  ST = await (await fetch("/api/state")).json();
+  $("#period").innerHTML = ST.periods.map(p => `<option>${esc(p)}</option>`).join("");
+  if (ST.periods.includes("2025-07-D2")) $("#period").value = "2025-07-D2";
+  applyLang();
+  if (innerWidth <= 860) $("#mChat").click();
+})();
+</script>
+</body>
+</html>

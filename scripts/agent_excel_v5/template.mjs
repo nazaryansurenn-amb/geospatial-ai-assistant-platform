@@ -8,7 +8,7 @@ const headings=[['Ցուցանիշ','Արժեք'],['Խումբ / տարի','Հո
 for(let i=0;i<3;i++){
  const s=wb.worksheets.add(names[i]);s.showGridLines=false;s.freezePanes.freezeRows(1);
  s.getRangeByIndexes(0,0,1,headings[i].length).values=[headings[i]];
- const prototype=i===0?['Հողամաս',1]:i===1?['Ակնալիճ',1,1.23,null]:['04-001-0001-0001','Ակնալիճ',1.23,'I հերթ','Ստորին Հրազդան I','Թեկնածու',2025,null];
+ const prototype=i===0?['Հողամաս',1]:i===1?['Ակնալիճ',1,1.23,null]:['04-001-9001-0001','Ակնալիճ',1.23,'I հերթ','Ստորին Հրազդան I','Թեկնածու',2025,null];
  s.getRangeByIndexes(1,0,1,prototype.length).values=[prototype];
  s.getRangeByIndexes(0,0,2,prototype.length).format.font={name:'Arial',size:11,color:'#233F35'};
  s.getRangeByIndexes(0,0,1,prototype.length).format={fill:'#185348',font:{name:'Arial',size:11,bold:true,color:'#FFFFFF'},rowHeight:40,wrapText:true};

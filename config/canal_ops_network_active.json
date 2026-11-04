@@ -1,0 +1,14 @@
+{
+ "version": "canal_ops_network_active",
+ "purpose": "The one switch that tells the allocation, the rotation, the agent tools, the loss chain and the page which synthetic network (and its map and loss chain) is in use. Older networks stay on disk unchanged; switching back is editing this file.",
+ "network_dir": "data/analysis/canal_ops_sim_v1/network_v3",
+ "network_config": "config/canal_ops_network_v3.json",
+ "id_map_v1": {
+  "file": "id_map_v1_to_v3.parquet",
+  "id_column": "v3_id"
+ },
+ "map_dir": "data/analysis/canal_ops_sim_v1/map_v2",
+ "losses": "config/canal_ops_losses_v2.json",
+ "loss_chain_dir": "data/analysis/canal_ops_sim_v1/loss_chain_v2",
+ "switched": "2026-11-02: network v3 (terrain-routed; owner-approved design and 'Approve, download'); before: network v2, map, losses v1"
+}

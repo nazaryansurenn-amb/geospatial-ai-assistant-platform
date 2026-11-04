@@ -91,9 +91,9 @@ def test_http_runtime_and_internal_files_not_served(name):
         with urllib.request.urlopen(base + "/api/land/delivery") as response:
             data = json.load(response)
         assert data == json.loads(module.LAND_ANALYTICS_SUMMARY.read_text(encoding="utf-8"))
-        with urllib.request.urlopen(base + "/api/cadastre/search?code=04-055-0115-0011") as response:
-            assert json.load(response)["cadastre_code"] == "04-055-0115-0011"
-        with urllib.request.urlopen(base + "/api/land/parcel?code=04-055-0115-0011") as response:
+        with urllib.request.urlopen(base + "/api/cadastre/search?code=04-055-9115-0011") as response:
+            assert json.load(response)["cadastre_code"] == "04-055-9115-0011"
+        with urllib.request.urlopen(base + "/api/land/parcel?code=04-055-9115-0011") as response:
             assert json.load(response)["history"] is not None
         for path in ["/app.py", "/server_data/cadastre_search.sqlite3", "/config/releases.json", "/data/source/cadastre/parcels_wua.gpkg", "/release.json"]:
             with pytest.raises(urllib.error.HTTPError) as error:

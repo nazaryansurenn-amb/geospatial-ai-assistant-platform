@@ -1,0 +1,376 @@
+{
+ "version": "canal_ops_map_layers_v2",
+ "frozen": "2026-11-02, from the owner-approved terrain rebuild design section 5 (colour-blind safe canal colours) and the owner's notes of the same day (canals on borders and roads; one pump station per lifted cluster). Change only as a new version.",
+ "purpose": "Map layers for the map-centred Irrigation Assistant page (8554, internal): satellite basemap, cadastral parcels coloured by land types v1.5, community outlines, the outline of the 44 communities, the Lower Hrazdan observed zone, the real main canal and the synthetic terrain-routed network v3 with pumping areas.",
+ "inputs": {
+  "cadastre": "data/source/cadastre/parcels_wua.gpkg",
+  "parcel_ids": "data/analysis/parcel_eo/current_halo_v1/current_parcels.parquet",
+  "land_types": "server_data/review/alphaearth_photo_review_20261030_v1/releases/landtypes_v1_5/parcels.parquet",
+  "communities": "data/source/wua_areas.geojson",
+  "canal": "data/source/lower_hrazdan.geojson",
+  "network_nodes": "data/analysis/canal_ops_sim_v1/network_v3/nodes.parquet",
+  "network_edges": "data/analysis/canal_ops_sim_v1/network_v3/edges.parquet",
+  "network_parcels": "data/analysis/canal_ops_sim_v1/network_v3/parcel_node.parquet",
+  "network_summary": "data/analysis/canal_ops_sim_v1/network_v3/summary.json",
+  "not_used": "SQL archive and every archive-derived layer: owner decision 2 of plan v6, not read at all"
+ },
+ "crs_metric": "EPSG:32638",
+ "parcels": {
+  "simplify_deg": 2.5e-06,
+  "simplify_note": "about 0.25 m, as the 8548 land-type map; hectares shown are the official ones",
+  "codes": "cadastral codes are used only to join geometry to parcel ids and are never written to a layer",
+  "fill_opacity": 0.3,
+  "fill_opacity_note": "parcel fills at 30 % so the canals stay readable (design section 5)"
+ },
+ "wua_outline": {
+  "label": "Outline of the 44 communities",
+  "close_m": 20.0,
+  "fill_holes_below_ha": 10.0,
+  "rule": "union of the 44 community outlines; slivers closed by a 20 m mitred closing; interior holes under 10 ha filled; larger holes kept and explained"
+ },
+ "observed_zone": {
+  "label": "Lower Hrazdan observed zone, stages I and II",
+  "buffer_m": 30.0,
+  "close_m": 200.0,
+  "simplify_m": 5.0,
+  "rule": "union of the 22,802 observed-zone parcel outlines, closed by 200 m (gaps of roads and ditches between fields; buffer out, then in), buffered 30 m outward and simplified to 5 m; area reported. A 60 m closing left 251 separate pieces and an 18 MB outline in the first build."
+ },
+ "terrain_areas": {
+  "dissolve_out_m": 15.0,
+  "dissolve_in_m": 10.0,
+  "simplify_m": 2.0
+ },
+ "basemap": {
+  "id": "satellite",
+  "type": "raster",
+  "tiles": [
+   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+  ],
+  "tile_size": 256,
+  "max_zoom": 19,
+  "attribution": "Imagery © Esri, Maxar, Earthstar Geographics"
+ },
+ "legend": {
+  "groups": [
+   {
+    "key": "field_land",
+    "title": "Field land",
+    "classes": [
+     {
+      "key": "FIELD_CROP",
+      "title": "Field crops",
+      "color": "#f2c230"
+     },
+     {
+      "key": "NO_CROP",
+      "title": "No crop in 2025",
+      "color": "#e9dcbc"
+     },
+     {
+      "key": "CROPLAND_UNCERTAIN",
+      "title": "2025 use not specified",
+      "color": "#d8b65a"
+     }
+    ]
+   },
+   {
+    "key": "perennial",
+    "title": "Perennial plantings",
+    "classes": [
+     {
+      "key": "ORCHARD",
+      "title": "Orchard",
+      "color": "#2fa84f"
+     },
+     {
+      "key": "VINEYARD",
+      "title": "Vineyard",
+      "color": "#9b4fd1"
+     },
+     {
+      "key": "PERENNIAL",
+      "title": "Type not specified",
+      "color": "#4f9a8c"
+     }
+    ]
+   },
+   {
+    "key": "other",
+    "title": null,
+    "classes": [
+     {
+      "key": "GREENHOUSE",
+      "title": "Greenhouse",
+      "color": "#56c6f0"
+     },
+     {
+      "key": "NON_FARM",
+      "title": "Not farmland",
+      "color": "#8d949b"
+     },
+     {
+      "key": "UNCLASSIFIED",
+      "title": "Unclassified (evidence unclear)",
+      "color": null,
+      "outline": "#ffffff"
+     },
+     {
+      "key": "NCI",
+      "title": "Not classifiable (too small or narrow)",
+      "color": null,
+      "outline": "#dddddd",
+      "dashed": true
+     }
+    ]
+   }
+  ],
+  "source": "land types v1.5 (frozen 2026-11-01), AI-interpreted from imagery with owner labels; not field-verified"
+ },
+ "styles": {
+  "main_canal": {
+   "color": "#0072B2",
+   "width": [
+    [
+     11,
+     5
+    ],
+    [
+     14,
+     7
+    ],
+    [
+     17,
+     10
+    ]
+   ],
+   "casing": "#ffffff",
+   "casing_extra": 3,
+   "arrows": true
+  },
+  "terrain_not_covered": {
+   "color": "#9e9e9e",
+   "dashed": true
+  },
+  "secondary_canal": {
+   "color": "#56B4E9",
+   "width": [
+    [
+     11,
+     3
+    ],
+    [
+     14,
+     4.5
+    ],
+    [
+     17,
+     6
+    ]
+   ],
+   "casing": "#0B1F33",
+   "casing_extra": 2,
+   "arrows": true
+  },
+  "tertiary_canal": {
+   "color": "#A6DCEF",
+   "width": [
+    [
+     11,
+     1.5
+    ],
+    [
+     14,
+     2.5
+    ],
+    [
+     17,
+     3.5
+    ]
+   ],
+   "casing": "#0B1F33",
+   "casing_extra": 1.5,
+   "arrows": true
+  },
+  "pumped_secondary_canal": {
+   "color": "#E69F00",
+   "width": [
+    [
+     11,
+     3
+    ],
+    [
+     14,
+     4.5
+    ],
+    [
+     17,
+     6
+    ]
+   ],
+   "casing": "#3B1F00",
+   "casing_extra": 2,
+   "arrows": true
+  },
+  "pumped_tertiary_canal": {
+   "color": "#F5C26B",
+   "width": [
+    [
+     11,
+     1.5
+    ],
+    [
+     14,
+     2.5
+    ],
+    [
+     17,
+     3.5
+    ]
+   ],
+   "casing": "#3B1F00",
+   "casing_extra": 1.5,
+   "arrows": true
+  },
+  "rising_main": {
+   "color": "#D55E00",
+   "width": [
+    [
+     11,
+     3
+    ],
+    [
+     14,
+     4.5
+    ],
+    [
+     17,
+     6
+    ]
+   ],
+   "dashed": true
+  },
+  "uncertain_canal": {
+   "color": "#9E9E9E",
+   "width": [
+    [
+     11,
+     1
+    ],
+    [
+     14,
+     1.5
+    ],
+    [
+     17,
+     2
+    ]
+   ],
+   "dashed": true
+  },
+  "lateral": {
+   "color": "#ffffff",
+   "width": [
+    [
+     11,
+     0.8
+    ],
+    [
+     14,
+     0.8
+    ],
+    [
+     17,
+     1.2
+    ]
+   ],
+   "dotted": true,
+   "opacity": 0.8
+  },
+  "main_gate": {
+   "color": "#ffffff",
+   "stroke": "#0072B2",
+   "symbol": "square",
+   "size": 12
+  },
+  "secondary_gate": {
+   "color": "#ffffff",
+   "stroke": "#56B4E9",
+   "symbol": "square",
+   "size": 9
+  },
+  "tertiary_gate": {
+   "color": "#A6DCEF",
+   "stroke": "#0B1F33",
+   "symbol": "circle",
+   "size": 6
+  },
+  "pumped_gate": {
+   "color": "#F5C26B",
+   "stroke": "#3B1F00",
+   "symbol": "circle",
+   "size": 6
+  },
+  "direct_outlet": {
+   "color": "#56B4E9",
+   "stroke": "#0B1F33",
+   "symbol": "circle",
+   "size": 5
+  },
+  "pump_station": {
+   "color": "#D55E00",
+   "stroke": "#ffffff",
+   "symbol": "triangle",
+   "size": 14
+  },
+  "tail_escape": {
+   "color": "#CC79A7",
+   "symbol": "cross",
+   "size": 9
+  },
+  "pumping_area": {
+   "color": "#E69F00",
+   "opacity": 0.2
+  },
+  "terrain_uncertain_area": {
+   "color": "#9E9E9E",
+   "opacity": 0.25
+  },
+  "community": {
+   "color": "#ffffff",
+   "width": 1.2
+  },
+  "wua_outline": {
+   "color": "#ffeb3b",
+   "width": 2.5
+  },
+  "observed_zone": {
+   "color": "#ffffff",
+   "width": 2,
+   "dashed": true
+  }
+ },
+ "zoom": {
+  "parcels_min": 13,
+  "tertiary_min": 12,
+  "laterals_min": 15,
+  "outlets_min": 14,
+  "labels_min": 12,
+  "arrows_min": 14
+ },
+ "labels": {
+  "simulation": "Simulation: synthetic terrain-routed network on the real main canal, not the real WUA network, not a water order",
+  "terrain": "terrain screening, synthetic",
+  "zone": "Lower Hrazdan observed zone, stages I and II",
+  "main_capacity": "main canal 12 m3/s, assumed design value (owner)",
+  "terrain_credit": "Terrain: produced using Copernicus DEM, (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018"
+ },
+ "output": "data/analysis/canal_ops_sim_v1/map_v2",
+ "draw_order": [
+  "parcels",
+  "areas",
+  "tertiary",
+  "secondary",
+  "main canal",
+  "structures"
+ ]
+}

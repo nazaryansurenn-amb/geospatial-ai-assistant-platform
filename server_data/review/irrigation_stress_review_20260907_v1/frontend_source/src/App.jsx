@@ -1925,7 +1925,7 @@ export default function App() {
                     value={searchCode}
                     autoComplete="off"
                     spellCheck="false"
-                    placeholder="04-013-0122-0013"
+                    placeholder="04-013-9122-0013"
                     onChange={(event) => {
                       setSearchCode(event.target.value);
                       setSearchStatus("");

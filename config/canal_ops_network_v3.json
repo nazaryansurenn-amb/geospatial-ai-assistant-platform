@@ -1,0 +1,256 @@
+{
+ "version": "canal_ops_network_v3",
+ "frozen": "2026-11-02, before the first v3 build, from the owner-approved terrain rebuild design (docs/CANAL_NETWORK_TERRAIN_REBUILD_DESIGN_2026_11_02_EN.md, change log 2026-11-02) and the owner's two notes of the same day: canals never cross farm land (they run on parcel borders and along roads, an infrastructure simulation), and one pump station per lifted land cluster stands at the canal and pushes water into its network. Change only as a new version.",
+ "purpose": "Terrain-routed synthetic distribution network for canal_ops_sim_v1 on land types v1.5: the real Lower Hrazdan main canal with synthetic main-canal gates and pump stations, secondary canals with gates, tertiary canals with gates, and parcel groups. Not a hydraulic design, not the real WUA network.",
+ "inputs": {
+  "canal": "data/source/lower_hrazdan.geojson",
+  "communities": "data/source/wua_areas.geojson",
+  "land_types": "server_data/review/alphaearth_photo_review_20261030_v1/releases/landtypes_v1_5/parcels.parquet",
+  "cadastre": "data/source/cadastre/parcels_wua.gpkg",
+  "parcel_ids": "data/analysis/parcel_eo/current_halo_v1/current_parcels.parquet",
+  "demand_reference": "data/analysis/canal_ops_sim_v1/demand/capacity_reference_2021_2024.parquet",
+  "sim_config": "config/canal_ops_sim_v1.json",
+  "ledger": "data/analysis/canal_ops_sim_v1/ledger_real.sqlite",
+  "not_used": "SQL archive and every archive-derived layer (point and layer tables, DWG, blocks): owner decision 2 of plan v6, not read at all",
+  "terrain_dem": "data/source/terrain_glo30/Copernicus_DSM_10_N40_00_E044_00_DEM.tif",
+  "roads": "data/analysis/osm_roads_v1.geojson",
+  "network_v2_parcels": "data/analysis/canal_ops_sim_v1/network_v2/parcel_node.parquet",
+  "network_v1_parcels": "data/analysis/canal_ops_sim_v1/network/parcel_gate.parquet",
+  "network_v1_branches": "data/analysis/canal_ops_sim_v1/network/branches.parquet"
+ },
+ "crs": "EPSG:32638",
+ "land_types": {
+  "farm_classes": [
+   "FIELD_CROP",
+   "NO_CROP",
+   "CROPLAND_UNCERTAIN",
+   "ORCHARD",
+   "VINEYARD",
+   "PERENNIAL",
+   "GREENHOUSE"
+  ],
+  "not_served": {
+   "NON_FARM": "not farm land",
+   "UNCLASSIFIED": "type unknown (owner: can't tell)",
+   "NOT_CLASSIFIABLE": "not classifiable (too small or narrow)"
+  },
+  "ltype": {
+   "FIELD_CROP": "field",
+   "NO_CROP": "field",
+   "CROPLAND_UNCERTAIN": "field",
+   "ORCHARD": "orchard",
+   "VINEYARD": "vineyard",
+   "PERENNIAL": "perennial",
+   "GREENHOUSE": "greenhouse"
+  },
+  "zero_canal_demand": {
+   "GREENHOUSE": "reached, no canal demand: greenhouse (possibly wells)"
+  },
+  "reached_note": "Reached means a canal or pump can deliver to the parcel. It is not 'irrigated': greenhouses and parcels with no crop need have zero canal demand."
+ },
+ "locations": {
+  "fill_missing_from": "cadastral geometry representative point (always inside the parcel)",
+  "community_attach_max_m": 500,
+  "community_attach_rule": "community from land types v1.5; for parcels without one, the community outline containing the representative point, else the nearest outline within community_attach_max_m, else '(outside community outlines)'"
+ },
+ "main_canal": {
+  "capacity_lps": 12000,
+  "capacity_basis": "owner 2026-11-02: 12 m3/s at the Lower Hrazdan head, assumed design value",
+  "stages": {
+   "stage_1": {
+    "label": "I",
+    "upstream_end": "first"
+   },
+   "stage_2": {
+    "label": "II",
+    "upstream_end": "last",
+    "draws_through": "stage_1"
+   }
+  },
+  "profile_step_m": 50,
+  "reference_radius_m": 45,
+  "sections": {
+   "rule": "stage I is split where the cumulative served hectares of its offtakes reach half (upper / lower stage I); stage II is one section",
+   "names": [
+    "upper stage I",
+    "lower stage I",
+    "stage II"
+   ]
+  },
+  "loss_pct_per_km": 0.5
+ },
+ "outlets": {
+  "cell_m": 250,
+  "rule": "parcel groups = farm parcels of one offtake, one 250 m grid cell and one community; the outlet is the group's access cell with the highest water level"
+ },
+ "tree": {
+  "method": "the routes of the highest-water-level search, kept only where they lead to an outlet, form one tree per offtake (or per pump chamber)",
+  "secondary_rule": "a route cell carrying more than tertiary_max_ha downstream is secondary canal; a hanging branch longer than tertiary_max_m is split by extending the secondary into its heaviest route",
+  "tertiary_max_ha": 55.0,
+  "tertiary_max_m": 2000.0,
+  "direct_outlet_rule": "an outlet on the secondary canal, or a single outlet under tertiary_cut_min_ha within direct_max_m of the secondary, is a direct outlet",
+  "tertiary_cut_min_ha": 25.0,
+  "direct_max_m": 100.0,
+  "gate_offset_m": 20.0,
+  "escape": "one tail escape at the end of the longest secondary route",
+  "tertiary_max_ha_note": "55 ha (v2 used 60): the highest plan-time need per hectare on v3 (about 1.06 l/s/ha) keeps a 55 ha tertiary within the 20-60 l/s stream band"
+ },
+ "terrain": {
+  "states": [
+   "gravity",
+   "pumping",
+   "terrain uncertain",
+   "terrain not covered"
+  ],
+  "decision_unit": "tertiary unit or direct outlet (85 % rule); never a single parcel on its own",
+  "uncertain_band_m": 3.0,
+  "uncertain_band_basis": "+-3 m kept until surveyed canal levels exist (design section 4)",
+  "label": "terrain screening, synthetic",
+  "no_head_figures": "water levels, ground and shortfalls are used inside the build only and never written to outputs"
+ },
+ "pumps": {
+  "unit_lps": [
+   25,
+   50,
+   100,
+   200,
+   400
+  ],
+  "max_units": 4,
+  "unit_rule": "smallest unit size with at most max_units whole units covering the station capacity",
+  "run_windows": [
+   "23:00-07:00"
+  ],
+  "run_windows_basis": "night-tariff window, assumed",
+  "override": null,
+  "override_note": "a real pump list ({node, kind: pump|gate, units, unit_lps}) replaces the terrain rule for the listed nodes; ids are kept",
+  "label": "terrain screening, synthetic"
+ },
+ "sizing": {
+  "rule": "capacity = max(P90 of the 2021-2024 dekad gross need incl. downstream losses, 0.8 l/s/ha x irrigable ha) x 1.10, one rule at every level",
+  "floor_lps_per_ha": 0.8,
+  "headroom": 1.1,
+  "percentile": 0.9,
+  "need_column": "net_m3_full_exp",
+  "need_basis": "demand v1 reference 2021-2024 (built on land types v1.4); classes without canal demand on v1.5 count zero; refreshed when demand is rebuilt on v1.5 (plan 2c demand)",
+  "efficiency": "field_efficiency of config/canal_ops_sim_v1.json by ltype (assumed)",
+  "loss_pct_per_km": {
+   "secondary": 2.0,
+   "tertiary": 3.0
+  },
+  "loss_band_pct_per_km": {
+   "secondary": [
+    1.5,
+    3.0
+   ],
+   "tertiary": [
+    2.0,
+    4.0
+   ]
+  },
+  "rounding_lps": {
+   "main": 10,
+   "secondary": 10,
+   "tertiary": 1,
+   "outlet": 1
+  },
+  "flow_class_min_open_lps": {
+   "secondary": 100,
+   "tertiary": 20
+  },
+  "min_open_share": 0.3,
+  "tertiary_stream_lps": [
+   20,
+   60
+  ],
+  "flow_classes": "gates and pumps on the main canal and the secondary canals they feed are class 'secondary'; gates and pumps on secondary canals, the tertiary canals they feed and direct outlets are class 'tertiary'; tertiary gates are class 'outlet'",
+  "rotation_note": "a parent carries its rotating children's flow: its capacity comes from its own aggregate need, not the sum of its children's capacities"
+ },
+ "qa": {
+  "ha_total": 10339.3,
+  "ha_tolerance": 0.01
+ },
+ "labels": {
+  "network": "Synthetic terrain-routed network: real main canal; synthetic gates, pump stations, secondary and tertiary canals along parcel borders and roads",
+  "zone": "Lower Hrazdan observed zone, stages I and II",
+  "terrain": "terrain screening, synthetic",
+  "capacity": "demand-derived estimate, not design capacity",
+  "main_capacity": "12 m3/s, assumed design value (owner)"
+ },
+ "terrain_source": {
+  "dem": "Copernicus DEM GLO-30 (30 m surface model), tile N40 E044, OpenTopography public mirror",
+  "credit": "produced using Copernicus DEM, (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA",
+  "grid_m": 10,
+  "dem_grid_m": 30,
+  "smoothing": "25th percentile of each 3 x 3 window (90 m) then a 3 x 3 mean at 30 m, to damp trees and buildings in the surface model; bilinear to the 10 m routing grid",
+  "domain_buffer_m": 2000
+ },
+ "routing": {
+  "rule": "canals never cross farm land: farm-parcel interiors are closed; parcel borders, gaps between parcels, non-farm land and road edges are open (owner 2026-11-02)",
+  "border_band_m": 7.0,
+  "closed": "interior of every cadastral parcel (the cadastral polygon shrunk by border_band_m), except observed-zone parcels of class NON_FARM, NOT_CLASSIFIABLE and UNCLASSIFIED, which are open at a higher cost; parcels outside the observed zone count as farm land",
+  "road_band_extra_m": 6.0,
+  "penalty_m_per_m": {
+   "road": 0.0,
+   "border": 0.0002,
+   "non_farm": 0.002
+  },
+  "penalty_note": "a small preference for roads over field borders; it never outweighs the water level",
+  "main_canal": "the main canal is a barrier: water enters the network only at offtakes, each on one side of the canal; no diagonal step passes the main canal",
+  "moves": "8 neighbours on the 10 m grid"
+ },
+ "water_level": {
+  "main_canal": "monotone (never rising) least-squares fit of the smoothed ground along each stage every profile_step_m; stage II starts at most at the end level of stage I",
+  "drop_per_gate_m": 0.3,
+  "routing_slope_m_per_km": 0.5,
+  "slope_m_per_km": {
+   "secondary": 0.25,
+   "tertiary": 0.5,
+   "field_channel": 0.5
+  },
+  "max_above_ground_m": 1.0,
+  "max_above_ground_rule": "the water may stand at most this much above the ground; where the ground falls faster, a drop structure lowers the level (counted)",
+  "max_cut_m": 1.5,
+  "max_cut_rule": "the ground may stand at most this much above the water level; a route that would need a deeper cut is closed (no siphons, no aqueducts)",
+  "freeboard_m": 0.3,
+  "method": "highest-water-level search (label-setting, like Dijkstra) from the sources over the open cells: each cell keeps the highest water level any route can bring to it; the routes form the canal tree",
+  "routing_cut_reserve_m": 0.3,
+  "routing_note": "routes are searched with the steepest canal slope (tertiary, 0.5 m/km) and with the cut limit reduced by one gate drop, so the final levels on every tier (secondary 0.25 m/km, tertiary 0.5 m/km plus the gate drop at its head) never break the cut limit"
+ },
+ "command": {
+  "parcel_ground": "90th percentile of the smoothed ground inside the cadastral polygon (centre value when the polygon holds no 10 m cell)",
+  "access": "a parcel takes water at the open cell within access_m of its polygon that carries the highest water level",
+  "access_m": 12.0,
+  "rule": "shortfall = parcel ground + freeboard + outlet gate drop + field-channel fall - water level at the outlet; gravity when it is at most 0",
+  "block_rule": "a tertiary unit or direct outlet is gravity when at least 85 % of its area passes; terrain uncertain when at least 85 % lies within the band; otherwise pumping",
+  "block_share": 0.85,
+  "uncertain_band_m": 3.0,
+  "pump_candidate": "parcels whose shortfall at the best gravity outlet exceeds the band, or that no gravity route reaches"
+ },
+ "offtakes": {
+  "rule": "a first search from every main-canal cell finds which canal point commands each farm parcel best; parcels are grouped by (stage, side, chainage window); each group with at least min_ha gets one offtake at the canal point that commands most of its hectares; smaller groups join a neighbour as in v2; a second search from the offtakes alone builds the network",
+  "chainage_window_m": 1500,
+  "min_ha": 115.0,
+  "max_merge_gap_windows": 1,
+  "point_bin_m": 50
+ },
+ "pumping": {
+  "rule": "owner 2026-11-02: one pump station per lifted land cluster, standing at the canal and pushing water through a rising main into a chamber at the cluster's high point; gravity ditches run downhill from the chamber; the gates below a pump are ordinary gates",
+  "cluster_link_m": 300.0,
+  "min_cluster_ha": 20.0,
+  "small_cluster_rule": "a cluster under min_cluster_ha joins the nearest larger cluster within join_m; otherwise it gets no station of its own (owner: one station per land cluster) and stays on the nearest outlet as terrain uncertain",
+  "join_m": 1000.0,
+  "chamber": "the open cell at the cluster's highest parcel ground; chamber level = the highest parcel ground of the cluster + freeboard + outlet gate drop",
+  "station": "the nearest point (route over open cells) of the main canal or of a gravity secondary canal (never a canal below another pump); clusters above tertiary_max_ha always take water from the main canal",
+  "rounds": 3,
+  "rounds_note": "parcels the chamber's ditches still cannot command form new clusters, at most rounds times; what is left is terrain uncertain on the pumped network",
+  "no_head_figures": "lift, head and energy are never computed or written",
+  "station_spacing_m": 250.0,
+  "station_spacing_rule": "every station has its own canal point at least station_spacing_m from any other station (one station per lifted land cluster, owner)"
+ },
+ "trial_build_changes": [
+  "2026-11-02, after the first trial build (its QA failed; nothing used): (1) an OSM road band no longer opens a farm-parcel interior (4,771 of 4,850 canal points inside farm parcels lay on tracks drawn across parcels); (2) one main-canal entry cell per offtake, drawn on the real canal line (13 short links crossed the canal line); (3) pumped ditches never step diagonally across a built canal (2 crossings); (4) stations only on the main canal or a gravity secondary (7 stations sat below another pump); (5) no station for pockets under min_cluster_ha (38 of 56 stations served under 20 ha, some under 1 ha); (6) leftover parcels never push a tertiary over tertiary_max_ha (3 tertiaries of 69-104 ha); (7) the farm-land check measures 8 m beyond the border band (a diagonal step passes up to 7.1 m from its cell centres).",
+  "2026-11-02, after the second trial build (all checks passed except one): tertiary_max_ha 60 -> 55 (one 58.3 ha tertiary needed 62 l/s, above the 60 l/s tertiary stream band).",
+  "2026-11-02, after the third build (all checks passed): stations keep station_spacing_m (250 m) apart; three clusters had taken the same canal point, so three station symbols and rising mains lay on top of each other on the map."
+ ]
+}

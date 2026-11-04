@@ -1,0 +1,98 @@
+{
+  "version": "canal_planner_v1",
+  "frozen": "2026-11-02, owner approval of the water delivery planner (docs/OWNER_APPROVALS_2026_11_02_EN.md part B); change only as a new version",
+  "label": "Simulation: synthetic network on the real main canal; not a water order",
+  "supply": {
+    "main_canal_cap_m3s": 12.0,
+    "change_times": ["07:00", "19:00"],
+    "season_start": "04-01",
+    "season_end": "10-31",
+    "month_days": 30,
+    "week_days": 7,
+    "max_segments": 20,
+    "token_ttl_s": 900
+  },
+  "horizons": {
+    "operational_max_days": 10,
+    "tactical_max_days": 42,
+    "note": "operational: per outlet and 12-h slot; tactical: per outlet and dekad; season: per secondary and dekad, as a range"
+  },
+  "turn": {
+    "min_m3_per_ha": 500,
+    "max_m3_per_ha": 1000,
+    "basis": "owner 2026-11-02: 500-1,000 m3 per hectare per irrigation event, counted as water entering the field; nothing after the field inlet is modelled (no field-application loss)"
+  },
+  "losses_sensitivity": {
+    "low": {"main": 0.10, "secondary": 0.20},
+    "assumed": {"main": 0.15, "secondary": 0.30},
+    "high": {"main": 0.20, "secondary": 0.40},
+    "basis": "owner 2026-11-02, approved as proposed; secondary includes tertiary canals"
+  },
+  "activity": {
+    "basis": "owner 2026-11-02 (B4): water only for farm land active on the planning date, judged from satellite views usable by that date; uncertain land shown separately; before growth shows, last season's state with a label",
+    "signal": "the cultivation-change v2 green definition: a clear view (NDVI valid fraction >= 0.8, NDVI in [-1, 1], cloud-leak dates masked) with NDVI >= 0.5 and vegetation fraction >= 0.5",
+    "green_ndvi": 0.5,
+    "green_vegetation_fraction": 0.5,
+    "valid_fraction_min": 0.8,
+    "s2_delay_days": 1,
+    "season_from": "03-01",
+    "active_min_green": 2,
+    "expect_until": {"field": "06-30", "perennial": "05-31"},
+    "idle_min_views": 4,
+    "states": {
+      "active": "two or more green views this season up to the planning date",
+      "expected": "no green view yet, before the type's green-up date, and active last season (label: last season's state)",
+      "idle_so_far": "no green view this season and either past the green-up date with enough clear views, or idle last season",
+      "unclear": "anything else (one green view, too few clear views); shown separately, no water",
+      "no_farm_water": "land class without canal water need (no crop, not farmland, greenhouse, not classifiable)"
+    },
+    "water": ["active", "expected"]
+  },
+  "realism": {
+    "basis": "irrigation canal operations expert review 2026-11-02, docs/PLANNER_REALISM_FIXES_PROPOSAL_2026_11_02_EN.md; owner: apply fixes 1-4 with the proposed values",
+    "min_draw_share_of_reach_design": 0.5,
+    "min_draw_share_with_check_gate": 0.25,
+    "arrival_band_share": 0.3,
+    "turn_end_drain_loss_share": 0.5,
+    "no_offtake_changes_from_h": 23,
+    "no_offtake_changes_to_h": 5,
+    "stress_test": {"head_extra": [0.10, 0.20, 0.25], "late_minutes": [15, 30], "head_share_of_outlets": 0.3333}
+  },
+  "operating_logic_v2": {
+    "version": "operating_logic_v2",
+    "basis": "expert design reference 2026-11-02 (docs/CANAL_LOGIC_DESIGN_REFERENCE_2026_11_02_EN.md, sections A-G), owner-approved; ramp placement F: the engineer's version",
+    "supersedes": "where these rules differ, they replace the older ones without changing their values: below 50 % of the head reach's design flow, reach blocks with check gates are on by default (B; realism.min_draw_share_of_reach_design applies only when check gates are switched off); realism.turn_end_drain_loss_share now applies to every close, not only the turn end (C); the fixed 0.7 m/s of canal_ops_rotation_v1 speed_m_per_s is replaced by the flow-dependent velocity (G1); outlet streams are 20-50 l/s instead of the outlet capacity (G2); 'not taken' is replaced by the tail escape (A)",
+    "night": {"acceptance_share": 0.65, "large_turn_h": 8, "tail_share_of_secondary": 0.3333,
+              "storage_share_of_main_volume": 0.05,
+              "order": ["running outlets", "tail outlets and large turns", "pump stations", "next outlet in the same secondary", "canal storage for the morning", "tail escape"],
+              "basis": "expert design reference 2026-11-02, owner-approved (A): 60-70 % of due outlets take a night turn (fixed share 0.65 chosen by a stable hash of the outlet name, no randomness); tail outlets and turns over 8 h always; canal extra fill 5 % of the main canal volume is carried to the morning"},
+    "escape": {"target_share_per_block": 0.05, "capacity_m3s": 2.0, "warn_share_of_capacity": 0.8, "waste_warn_share": 0.125,
+               "capacity_basis": "owner 2026-11-03 'ok set 2', after the irrigation engineer (2.3 m3/s, about half the stage II inlet 4.53 m3/s) and the canal operator (1.8 m3/s, silted old escapes); simulation assumption, unverified; main-canal tail escape only, secondary escapes counted separately; peak above capacity = error, above 80 % = warning; escaped volume above 12.5 % of released = waste warning (safe but wasteful)",
+               "basis": "expert design reference 2026-11-02, owner-approved (A, G4): target <= 5 % of each 12-h block; the capacity is a simulation assumption; above the target the plan is flagged, above the capacity it is a planning error: 'supply exceeds what can be routed: reduce the head'"},
+    "reach_blocks": {"on_below_share_of_design": 0.5, "min_draw_share_checked_reach": 0.25, "min_block_h": 12,
+                     "order": ["stage II", "lower stage I", "upper stage I"],
+                     "basis": "expert design reference 2026-11-02, owner-approved (B): check gates hold the level; below 50 % of the head reach's design flow the canal runs in reach blocks of whole 12-h slots, tail reach first, one switch per change time; offtakes in the checked reach draw at >= 25 % of that reach's own design flow"},
+    "close_reopen": {"drain_share": 0.5, "refill_discount_dry_under_h": 12, "refill_discount": 0.3,
+                     "holding_lps": 20, "holding_gap_under_h": 6, "secondary_min_run_h": 12,
+                     "basis": "expert design reference 2026-11-02, owner-approved (C): every close loses 50 % of the water stored in the secondary at the running flow; every reopen refills the full prism, less 30 % if dry under 12 h; a gap under 6 h keeps a 20 l/s holding flow instead of closing"},
+    "ramp": {"placement": "engineer: ramps inside the window, plateau raised so released = confirmed; cap-bound -> plateau extended, reported as a deviation",
+             "volume_tolerance": 0.01, "down_earliest_h": 5, "head_night_from_h": 23, "head_night_to_h": 5,
+             "basis": "expert design reference 2026-11-02, owner-approved (D, F): the head ramps up from the window start (07:00); a ramp-down that would fall in 23:00-05:00 at the head starts at 05:00 instead"},
+    "order": {"weights": {"D": 40, "C": 25, "T": 20, "R": 15}, "slack_days_scale": 10,
+              "crop_sensitivity": {"perennial": 1.0, "sensitive_field": 0.7, "other_green_field": 0.4},
+              "tolerance_days": {"perennial": 10, "sensitive_field": 6, "other_green_field": 14},
+              "section_turn": {"stage II": 1.0, "lower stage I": 0.5, "upper stage I": 0.0},
+              "protected_floor_days_to_stress": 1, "concentrate_below_supply_share": 0.6,
+              "steps": ["feasibility", "hard floors: never zero twice, protected minimum", "rotation turn (carry-over)", "score S = 40 D + 25 C + 20 T + 15 R", "concentrate full turns below 60 % of due demand", "ties by outlet name"],
+              "basis": "expert design reference 2026-11-02, owner-approved (E); tolerance days within the reference's ranges (vegetables 5-7, vineyards and old orchards 10-14, cereals and alfalfa wait); section turn follows the approved rotation order (canal_ops_rotation_v1 stage2_window)"},
+    "velocity": {"design_m_s": 0.7, "exponent": 0.4, "min_m_s": 0.4,
+                 "basis": "expert design reference 2026-11-02, owner-approved (G1): v = 0.7 (Q / Q design)^0.4, about 0.5 m/s at 40 % of design"},
+    "streams": {"outlet_max_lps": 50, "earthen_min_streams": 2, "turn_target_h": 12,
+                "earthen": "outlets on tertiary canals",
+                "basis": "expert design reference 2026-11-02, owner-approved (G2): whole 20 l/s hand streams in proportion to area and turn, 20-50 l/s per outlet, at least 2 streams at earthen gates; one turn depth per user"},
+    "stress_test": {"rider_late_h": 2, "night_only_share": 0.95,
+                    "basis": "expert design reference 2026-11-02, owner-approved (G6): a ditch rider 2 h late at 19:00; reaches served only by night turns"}
+  },
+  "evidence": {"max_turn_bonus": 0.10, "source_volume": "other_green_field", "basis": "owner 2026-11-02"},
+  "freeze": {"hours": 48, "rule": "applies to changes during a window, not to a new plan made before it starts (owner 2026-11-02)"}
+}
